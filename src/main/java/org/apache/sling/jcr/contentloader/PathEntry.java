@@ -16,15 +16,22 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.sling.jcr.contentloader.internal;
+package org.apache.sling.jcr.contentloader;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Dictionary;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.function.Function;
+import java.util.jar.Manifest;
+import java.util.stream.Collectors;
 
 import org.apache.sling.commons.osgi.ManifestHeader;
-import org.apache.sling.jcr.contentloader.ImportOptions;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.osgi.framework.Bundle;
 
 /**
@@ -129,14 +136,43 @@ public class PathEntry extends ImportOptions {
 
     private long lastModified;
 
-    public static Iterator<PathEntry> getContentPaths(final Bundle bundle) {
+    /** 
+     * Parses the "Sling-Initial-Content" header from the given manifest and returns the resolved PathEntries
+     * 
+     * @param manifest the manifest
+     * @param bundleLastModified the timestamp when the bundle has been last modified or -1 if not known
+     * @return an iterator over the parsed {@code PathEntry} items or {@code null} in case no "Sling-Initial-Content" header was found in the manifest
+     */
+    public static @Nullable Iterator<PathEntry> getContentPaths(@NotNull final Manifest manifest, long bundleLastModified) {
+        @SuppressWarnings({ "unchecked", "rawtypes" })
+        Map<String, String> headers = (Map)manifest.getMainAttributes();
+        return getContentPaths(headers, bundleLastModified);
+    }
+
+    /** 
+     * Parses the "Sling-Initial-Content" header from the given bundle and returns the resolved PathEntries
+     * 
+     * @param bundle the bundle
+     * @return an iterator over the parsed {@code PathEntry} items or {@code null} in case no "Sling-Initial-Content" header was found in the bundle's manifest
+     */
+    public static @Nullable Iterator<PathEntry> getContentPaths(final Bundle bundle) {
+        return getContentPaths(toMap(bundle.getHeaders()), bundle.getLastModified());
+    }
+
+    /** 
+     * Parses the "Sling-Initial-Content" header from the given headers and returns the resolved PathEntries
+     * 
+     * @param headers the manifest headers
+     * @param bundleLastModified the timestamp when the bundle has been last modified or -1 if not known
+     * @return an iterator over the parsed {@code PathEntry} items or {@code null} in case no "Sling-Initial-Content" header was found
+     */
+    public static @Nullable Iterator<PathEntry> getContentPaths(final Map<String, String> headers, long bundleLastModified) {
         final List<PathEntry> entries = new ArrayList<>();
-        String bundleLastModifiedStamp = bundle.getHeaders().get("Bnd-LastModified");
-        long bundleLastModified = bundle.getLastModified(); // time last modified inside the container
+        String bundleLastModifiedStamp = headers.get("Bnd-LastModified");
         if ( bundleLastModifiedStamp != null ) {
             bundleLastModified = Math.min(bundleLastModified, Long.parseLong(bundleLastModifiedStamp));
         }
-        final String root = bundle.getHeaders().get(CONTENT_HEADER);
+        final String root = headers.get(CONTENT_HEADER);
         if (root != null) {
             final ManifestHeader header = ManifestHeader.parse(root);
             for (final ManifestHeader.Entry entry : header.getEntries()) {
@@ -151,6 +187,12 @@ public class PathEntry extends ImportOptions {
         return entries.iterator();
     }
 
+    private static Map<String, String> toMap(Dictionary<String, String> dict) {
+        List<String> keys = Collections.list(dict.keys());
+        return keys.stream()
+                   .collect(Collectors.toMap(Function.identity(), dict::get));
+    }
+ 
     public PathEntry(ManifestHeader.Entry entry, long bundleLastModified) {
         this.path = entry.getValue();
         this.lastModified = bundleLastModified;
@@ -250,7 +292,7 @@ public class PathEntry extends ImportOptions {
     }
 
     /* (non-Javadoc)
-     * @see org.apache.sling.jcr.contentloader.internal.ImportOptions#isOverwrite()
+     * @see org.apache.sling.jcr.contentloader.ImportOptions#isOverwrite()
      */
     public boolean isOverwrite() {
         return this.overwrite;
@@ -269,7 +311,7 @@ public class PathEntry extends ImportOptions {
     }
 
     /* (non-Javadoc)
-     * @see org.apache.sling.jcr.contentloader.internal.ImportOptions#isCheckin()
+     * @see org.apache.sling.jcr.contentloader.ImportOptions#isCheckin()
      */
     public boolean isCheckin() {
         return this.checkin;
@@ -284,7 +326,7 @@ public class PathEntry extends ImportOptions {
     }
 
     /* (non-Javadoc)
-     * @see org.apache.sling.jcr.contentloader.internal.ImportOptions#isIgnoredImportProvider(java.lang.String)
+     * @see org.apache.sling.jcr.contentloader.ImportOptions#isIgnoredImportProvider(java.lang.String)
      */
     public boolean isIgnoredImportProvider(String extension) {
         if ( extension.startsWith(".") ) {

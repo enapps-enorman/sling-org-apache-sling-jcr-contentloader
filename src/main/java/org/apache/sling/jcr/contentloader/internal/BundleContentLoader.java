@@ -50,6 +50,7 @@ import javax.jcr.version.VersionManager;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.sling.jcr.contentloader.ContentReader;
+import org.apache.sling.jcr.contentloader.PathEntry;
 import org.osgi.framework.Bundle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

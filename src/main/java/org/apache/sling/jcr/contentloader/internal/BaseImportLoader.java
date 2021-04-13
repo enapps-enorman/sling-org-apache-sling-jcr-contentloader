@@ -25,6 +25,7 @@ import java.util.Map.Entry;
 
 import org.apache.sling.jcr.contentloader.ContentReader;
 import org.apache.sling.jcr.contentloader.ImportOptions;
+import org.apache.sling.jcr.contentloader.PathEntry;
 
 /**
  * Base class that takes care of the details that are common to bundle content
