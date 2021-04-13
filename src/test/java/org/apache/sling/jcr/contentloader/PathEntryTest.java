@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.sling.jcr.contentloader.internal;
+package org.apache.sling.jcr.contentloader;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -31,7 +31,6 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.sling.commons.osgi.ManifestHeader;
-import org.apache.sling.jcr.contentloader.PathEntry;
 import org.jmock.Expectations;
 import org.jmock.integration.junit4.JUnitRuleMockery;
 import org.junit.Rule;

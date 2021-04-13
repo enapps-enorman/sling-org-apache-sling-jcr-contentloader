@@ -16,10 +16,10 @@
  */
 package org.apache.sling.jcr.contentloader.internal;
 
-import static org.apache.sling.jcr.contentloader.internal.ImportOptionsFactory.AUTO_CHECKOUT;
-import static org.apache.sling.jcr.contentloader.internal.ImportOptionsFactory.OVERWRITE_NODE;
-import static org.apache.sling.jcr.contentloader.internal.ImportOptionsFactory.OVERWRITE_PROPERTIES;
-import static org.apache.sling.jcr.contentloader.internal.ImportOptionsFactory.createImportOptions;
+import static org.apache.sling.jcr.contentloader.ImportOptionsFactory.AUTO_CHECKOUT;
+import static org.apache.sling.jcr.contentloader.ImportOptionsFactory.OVERWRITE_NODE;
+import static org.apache.sling.jcr.contentloader.ImportOptionsFactory.OVERWRITE_PROPERTIES;
+import static org.apache.sling.jcr.contentloader.ImportOptionsFactory.createImportOptions;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
