@@ -144,8 +144,8 @@ public class PathEntry extends ImportOptions {
      * @return an iterator over the parsed {@code PathEntry} items or {@code null} in case no "Sling-Initial-Content" header was found in the manifest
      */
     public static @Nullable Iterator<PathEntry> getContentPaths(@NotNull final Manifest manifest, long bundleLastModified) {
-        @SuppressWarnings({ "unchecked", "rawtypes" })
-        Map<String, String> headers = (Map)manifest.getMainAttributes();
+        // convert to map of right type (Attributes has Attributes.Name as key type, not String), so simple casting won't do
+        Map<String, String> headers = manifest.getMainAttributes().entrySet().stream().collect(Collectors.toMap( e -> e.getKey().toString(),  e-> e.getValue().toString()));
         return getContentPaths(headers, bundleLastModified);
     }
 
