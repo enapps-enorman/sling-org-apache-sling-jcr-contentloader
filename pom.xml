@@ -136,6 +136,12 @@
         <artifactId>org.osgi.annotation.bundle</artifactId>
     </dependency>
     
+        <!-- JetBrains annotations for null-analysis (SLING-7798) -->
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+        </dependency>
+
       <!-- -->
         <dependency>
             <groupId>javax.jcr</groupId>

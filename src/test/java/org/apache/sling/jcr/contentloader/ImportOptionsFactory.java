@@ -14,9 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.sling.jcr.contentloader.internal;
-
-import org.apache.sling.jcr.contentloader.ImportOptions;
+package org.apache.sling.jcr.contentloader;
 
 public final class ImportOptionsFactory {
     
