@@ -388,6 +388,10 @@ public class PathEntry extends ImportOptions {
         return this.ignoreContentReaders.contains(extension);
     }
 
+    public Set<String> getIgnoredContentReaders() {
+        return new HashSet<>(ignoreContentReaders);
+    }
+
     public String getTarget() {
         return target;
     }

@@ -59,15 +59,15 @@ import org.slf4j.LoggerFactory;
  * </ul>
  *
  */
-@Component(service = {}, property = { Constants.SERVICE_VENDOR + "=The Apache Software Foundation",
+@Component(service = {BundleHelper.class}, property = { Constants.SERVICE_VENDOR + "=The Apache Software Foundation",
         Constants.SERVICE_DESCRIPTION
-                + "=Apache Sling Content Loader Implementation" }, configurationPolicy = ConfigurationPolicy.OPTIONAL)
+                + "=Apache Sling Content Loader Implementation" }, immediate = true, configurationPolicy = ConfigurationPolicy.OPTIONAL)
 @Designate(ocd = BundleContentLoaderConfiguration.class, factory = false)
 public class BundleContentLoaderListener implements SynchronousBundleListener, BundleHelper {
 
     public static final String PROPERTY_CONTENT_LOADED = "content-loaded";
     public static final String PROPERTY_CONTENT_LOADED_AT = "content-load-time";
-    private static final String PROPERTY_CONTENT_LOADED_BY = "content-loaded-by";
+    protected static final String PROPERTY_CONTENT_LOADED_BY = "content-loaded-by";
     private static final String PROPERTY_CONTENT_UNLOADED_AT = "content-unload-time";
     private static final String PROPERTY_CONTENT_UNLOADED_BY = "content-unloaded-by";
     public static final String PROPERTY_UNINSTALL_PATHS = "uninstall-paths";
@@ -369,6 +369,9 @@ public class BundleContentLoaderListener implements SynchronousBundleListener, B
             info.put(PROPERTY_CONTENT_LOADED, bcNode.getProperty(PROPERTY_CONTENT_LOADED).getBoolean());
         } else {
             info.put(PROPERTY_CONTENT_LOADED, false);
+        }
+        if (bcNode.hasProperty(PROPERTY_CONTENT_LOADED_BY)) {
+            info.put(PROPERTY_CONTENT_LOADED_BY, bcNode.getProperty(PROPERTY_CONTENT_LOADED_BY).getString());
         }
         if (bcNode.hasProperty(PROPERTY_UNINSTALL_PATHS)) {
             final Value[] values = bcNode.getProperty(PROPERTY_UNINSTALL_PATHS).getValues();
