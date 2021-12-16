@@ -110,7 +110,7 @@ public class PathEntry extends ImportOptions {
 
     /**
      * The flag "maven:mount" is not actually used by the JCR Content Loader. It can be used
-     * to signal to the "mount" goal of the sling-maven-plugin to ignore a certain Sling-Initial-Content entry
+     * to signal to the "fsmount" goal of the sling-maven-plugin to ignore a certain Sling-Initial-Content entry
      * of a Maven project when "sling:mount" is executed on the command line.
      * Reference: https://github.com/apache/sling-maven-plugin/blob/d67d5c1900782c68c1bfcbdc499c02cf31224916/sling-maven-plugin/src/main/java/org/apache/sling/maven/bundlesupport/fsresource/SlingInitialContentMounter.java#L97
      */
