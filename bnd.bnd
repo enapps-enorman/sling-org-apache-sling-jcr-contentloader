@@ -1,4 +1,4 @@
-Bundle-Documentation: https://sling.apache.org/documentation/bundles/content-loading-jcr-contentloader.html
+Bundle-DocURL: https://sling.apache.org/documentation/bundles/content-loading-jcr-contentloader.html
 Bundle-Category:\
   sling,\
   jcr,\
