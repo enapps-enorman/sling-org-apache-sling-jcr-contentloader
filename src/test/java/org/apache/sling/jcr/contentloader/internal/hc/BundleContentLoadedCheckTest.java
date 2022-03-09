@@ -34,6 +34,7 @@ import org.apache.sling.jcr.contentloader.internal.BundleContentLoaderTest;
 import org.apache.sling.jcr.contentloader.internal.BundleHelper;
 import org.apache.sling.jcr.contentloader.internal.ContentReaderWhiteboard;
 import org.apache.sling.jcr.contentloader.internal.readers.JsonReader;
+import org.apache.sling.jcr.contentloader.internal.readers.OrderedJsonReader;
 import org.apache.sling.jcr.contentloader.internal.readers.XmlReader;
 import org.apache.sling.jcr.contentloader.internal.readers.ZipReader;
 import org.apache.sling.testing.mock.osgi.MockBundle;
@@ -61,9 +62,10 @@ public class BundleContentLoadedCheckTest {
         bundle = BundleContentLoaderTest.newBundleWithInitialContent(context, "SLING-INF/libs/app;path:=/libs/app");
 
         // prepare content readers
-        context.registerInjectActivateService(new JsonReader());
-        context.registerInjectActivateService(new XmlReader());
-        context.registerInjectActivateService(new ZipReader());
+        context.registerInjectActivateService(JsonReader.class);
+        context.registerInjectActivateService(OrderedJsonReader.class);
+        context.registerInjectActivateService(XmlReader.class);
+        context.registerInjectActivateService(ZipReader.class);
 
         // whiteboard which holds readers
         context.registerInjectActivateService(new ContentReaderWhiteboard());

@@ -41,6 +41,10 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.lock.LockManager;
 
+import org.apache.sling.jcr.contentloader.internal.readers.JsonReader;
+import org.apache.sling.jcr.contentloader.internal.readers.OrderedJsonReader;
+import org.apache.sling.jcr.contentloader.internal.readers.XmlReader;
+import org.apache.sling.jcr.contentloader.internal.readers.ZipReader;
 import org.apache.sling.testing.mock.osgi.MockBundle;
 import org.apache.sling.testing.mock.sling.ResourceResolverType;
 import org.apache.sling.testing.mock.sling.junit.SlingContext;
@@ -67,6 +71,12 @@ public class BundleContentLoaderListenerTest {
 
     @Before
     public void setup() throws Exception {
+        // prepare content readers
+        context.registerInjectActivateService(JsonReader.class);
+        context.registerInjectActivateService(OrderedJsonReader.class);
+        context.registerInjectActivateService(XmlReader.class);
+        context.registerInjectActivateService(ZipReader.class);
+
         // whiteboard which holds readers
         context.registerInjectActivateService(new ContentReaderWhiteboard());
 

@@ -35,6 +35,7 @@ import javax.jcr.lock.LockManager;
 
 import org.apache.sling.commons.mime.MimeTypeService;
 import org.apache.sling.jcr.api.SlingRepository;
+import org.apache.sling.jcr.contentloader.ContentReader;
 import org.apache.sling.serviceusermapping.ServiceUserMapped;
 import org.apache.sling.settings.SlingSettingsService;
 import org.osgi.framework.Bundle;
@@ -121,6 +122,16 @@ public class BundleContentLoaderListener implements SynchronousBundleListener, B
     /** Sling settings service. */
     @Reference
     protected SlingSettingsService settingsService;
+
+    // SLING-11189: ensure all built-in content readers are registered before processing any bundle in this listener
+    @Reference(target = "(component.name=org.apache.sling.jcr.contentloader.internal.readers.JsonReader)")
+    private ContentReader mandatoryContentReader1;
+    @Reference(target = "(component.name=org.apache.sling.jcr.contentloader.internal.readers.OrderedJsonReader)")
+    private ContentReader mandatoryContentReader2;
+    @Reference(target = "(component.name=org.apache.sling.jcr.contentloader.internal.readers.XmlReader)")
+    private ContentReader mandatoryContentReader3;
+    @Reference(target = "(component.name=org.apache.sling.jcr.contentloader.internal.readers.ZipReader)")
+    private ContentReader mandatoryContentReader4;
 
     // ---------- BundleListener -----------------------------------------------
 

@@ -49,6 +49,7 @@ import org.apache.jackrabbit.commons.JcrUtils;
 import org.apache.jackrabbit.oak.spi.security.principal.EveryonePrincipal;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.jcr.contentloader.internal.readers.JsonReader;
+import org.apache.sling.jcr.contentloader.internal.readers.OrderedJsonReader;
 import org.apache.sling.jcr.contentloader.internal.readers.XmlReader;
 import org.apache.sling.jcr.contentloader.internal.readers.ZipReader;
 import org.apache.sling.testing.mock.osgi.MockBundle;
@@ -74,9 +75,10 @@ public class BundleContentLoaderTest {
     @Before
     public void prepareContentLoader() throws Exception {
         // prepare content readers
-        context.registerInjectActivateService(new JsonReader());
-        context.registerInjectActivateService(new XmlReader());
-        context.registerInjectActivateService(new ZipReader());
+        context.registerInjectActivateService(JsonReader.class);
+        context.registerInjectActivateService(OrderedJsonReader.class);
+        context.registerInjectActivateService(XmlReader.class);
+        context.registerInjectActivateService(ZipReader.class);
 
         // whiteboard which holds readers
         context.registerInjectActivateService(new ContentReaderWhiteboard());
