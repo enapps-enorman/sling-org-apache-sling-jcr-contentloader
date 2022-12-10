@@ -22,29 +22,48 @@ import static org.apache.sling.jcr.contentloader.ImportOptionsFactory.NO_OPTIONS
 import static org.apache.sling.jcr.contentloader.ImportOptionsFactory.OVERWRITE_NODE;
 import static org.apache.sling.jcr.contentloader.ImportOptionsFactory.OVERWRITE_PROPERTIES;
 import static org.apache.sling.jcr.contentloader.ImportOptionsFactory.createImportOptions;
+import static org.apache.sling.jcr.contentloader.LocalRestrictionTest.val;
+import static org.apache.sling.jcr.contentloader.LocalRestrictionTest.vals;
+import static org.apache.sling.jcr.contentloader.it.SLING11713InitialContentIT.assertAce;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.jcr.AccessDeniedException;
 import javax.jcr.Node;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.UnsupportedRepositoryOperationException;
+import javax.jcr.ValueFormatException;
 import javax.jcr.nodetype.NodeType;
+import javax.jcr.security.AccessControlEntry;
+import javax.jcr.security.AccessControlList;
+import javax.jcr.security.AccessControlManager;
+import javax.jcr.security.AccessControlPolicy;
 
+import org.apache.jackrabbit.oak.spi.security.authorization.accesscontrol.AccessControlConstants;
+import org.apache.jackrabbit.oak.spi.security.privilege.PrivilegeConstants;
+import org.apache.sling.jcr.base.util.AccessControlUtil;
 import org.apache.sling.jcr.contentloader.ContentImportListener;
 import org.apache.sling.jcr.contentloader.ContentReader;
+import org.apache.sling.jcr.contentloader.LocalPrivilege;
+import org.apache.sling.jcr.contentloader.LocalRestriction;
 import org.apache.sling.testing.mock.sling.ResourceResolverType;
 import org.apache.sling.testing.mock.sling.junit.SlingContext;
 import org.jmock.Expectations;
@@ -545,6 +564,659 @@ public class DefaultContentCreatorTest {
         contentCreator.finishNode();
         //False since it doesn't have referenceable mixin
         assertFalse(parentNode.hasProperty(propName));
+    }
+
+    @Test
+    public void createAceWithoutRestrictionsSpecified() throws RepositoryException {
+        contentCreator.init(createImportOptions(NO_OPTIONS),
+                new HashMap<String, ContentReader>(), null, null);
+        contentCreator.prepareParsing(parentNode, null);
+
+        final String userName = uniqueId();
+        contentCreator.createUser(userName, "Test", null);
+
+        contentCreator.createAce(userName, new String[] {PrivilegeConstants.JCR_READ}, 
+                new String[] {PrivilegeConstants.JCR_WRITE}, null);
+
+        contentCreator.finishNode();
+
+        //verify ACE was set.
+        List<AccessControlEntry> allEntries = allEntries();
+        assertEquals(2, allEntries.size());
+        assertAce(allEntries.get(0), userName,
+                false, // isAllow
+                new String[] {PrivilegeConstants.JCR_WRITE}, // PrivilegeNames
+                new String[] {}, // RestrictionNames
+                new String[][] {}); // RestrictionValues
+        assertAce(allEntries.get(1), userName,
+                true, // isAllow
+                new String[] {PrivilegeConstants.JCR_READ}, // PrivilegeNames
+                new String[] {}, // RestrictionNames
+                new String[][] {}); // RestrictionValues
+    }
+
+    @Deprecated
+    @Test
+    public void createAceWithNonSpecificRestrictions() throws RepositoryException {
+        contentCreator.init(createImportOptions(NO_OPTIONS),
+                new HashMap<String, ContentReader>(), null, null);
+        contentCreator.prepareParsing(parentNode, null);
+
+        final String userName = uniqueId();
+        contentCreator.createUser(userName, "Test", null);
+
+        contentCreator.createAce(userName, new String[] {PrivilegeConstants.JCR_READ}, 
+                new String[] {PrivilegeConstants.JCR_WRITE}, null,
+                Collections.singletonMap(AccessControlConstants.REP_GLOB, val("glob1allow")),  // restrictions
+                Collections.singletonMap(AccessControlConstants.REP_ITEM_NAMES, vals(session.getValueFactory(), PropertyType.NAME, "name1", "name2")),  // mvRestrictions
+                Collections.emptySet()); // removedRestrictionNames
+
+        contentCreator.finishNode();
+
+        //verify ACE was set.
+        List<AccessControlEntry> allEntries = allEntries();
+        assertEquals(2, allEntries.size());
+        assertAce(allEntries.get(0), userName,
+                false, // isAllow
+                new String[] {PrivilegeConstants.JCR_WRITE}, // PrivilegeNames
+                new String[] {AccessControlConstants.REP_GLOB, AccessControlConstants.REP_ITEM_NAMES}, // RestrictionNames
+                new String[][] {new String[]{"glob1allow"}, new String[] {"name1", "name2"}}); // RestrictionValues
+        assertAce(allEntries.get(1), userName,
+                true, // isAllow
+                new String[] {PrivilegeConstants.JCR_READ}, // PrivilegeNames
+                new String[] {AccessControlConstants.REP_GLOB, AccessControlConstants.REP_ITEM_NAMES}, // RestrictionNames
+                new String[][] {new String[]{"glob1allow"}, new String[] {"name1", "name2"}}); // RestrictionValues
+    }
+
+    @Deprecated
+    @Test
+    public void createAceWithNullSpecificRestrictions() throws RepositoryException {
+        contentCreator.init(createImportOptions(NO_OPTIONS),
+                new HashMap<String, ContentReader>(), null, null);
+        contentCreator.prepareParsing(parentNode, null);
+
+        final String userName = uniqueId();
+        contentCreator.createUser(userName, "Test", null);
+
+        contentCreator.createAce(userName, new String[] {PrivilegeConstants.JCR_READ}, 
+                new String[] {PrivilegeConstants.JCR_WRITE}, null,
+                null,  // restrictions
+                null,  // mvRestrictions
+                null); // removedRestrictionNames
+
+        contentCreator.finishNode();
+
+        //verify ACE was set.
+        List<AccessControlEntry> allEntries = allEntries();
+        assertEquals(2, allEntries.size());
+        assertAce(allEntries.get(0), userName,
+                false, // isAllow
+                new String[] {PrivilegeConstants.JCR_WRITE}, // PrivilegeNames
+                new String[] {}, // RestrictionNames
+                new String[][] {}); // RestrictionValues
+        assertAce(allEntries.get(1), userName,
+                true, // isAllow
+                new String[] {PrivilegeConstants.JCR_READ}, // PrivilegeNames
+                new String[] {}, // RestrictionNames
+                new String[][] {}); // RestrictionValues
+    }
+
+    @Test
+    public void createAceWithSpecificRestrictions() throws RepositoryException {
+        contentCreator.init(createImportOptions(NO_OPTIONS),
+                new HashMap<String, ContentReader>(), null, null);
+        contentCreator.prepareParsing(parentNode, null);
+
+        final String userName = uniqueId();
+        contentCreator.createUser(userName, "Test", null);
+
+        List<LocalPrivilege> list = new ArrayList<>();
+        LocalPrivilege readLp = new LocalPrivilege(PrivilegeConstants.JCR_READ);
+        readLp.setAllow(true);
+        readLp.setAllowRestrictions(Collections.singleton(new LocalRestriction(AccessControlConstants.REP_GLOB, val("glob1allow"))));
+        list.add(readLp);
+        LocalPrivilege writeLp = new LocalPrivilege(PrivilegeConstants.JCR_WRITE);
+        writeLp.setDeny(true);
+        writeLp.setDenyRestrictions(Collections.singleton(new LocalRestriction(AccessControlConstants.REP_ITEM_NAMES, vals(session.getValueFactory(), PropertyType.NAME, "name1", "name2"))));
+        list.add(writeLp);
+        contentCreator.createAce(userName, list, null);
+
+        contentCreator.finishNode();
+
+        //verify ACE was set.
+        List<AccessControlEntry> allEntries = allEntries();
+        assertEquals(2, allEntries.size());
+        assertAce(allEntries.get(0), userName,
+                false, // isAllow
+                new String[] {PrivilegeConstants.JCR_WRITE}, // PrivilegeNames
+                new String[] {AccessControlConstants.REP_ITEM_NAMES}, // RestrictionNames
+                new String[][] {new String[]{"name1", "name2"}}); // RestrictionValues
+        assertAce(allEntries.get(1), userName,
+                true, // isAllow
+                new String[] {PrivilegeConstants.JCR_READ}, // PrivilegeNames
+                new String[] {AccessControlConstants.REP_GLOB}, // RestrictionNames
+                new String[][] {new String[]{"glob1allow"}}); // RestrictionValues
+    }
+
+    @Test
+    public void createAceWithSpecificRestrictionsTwice() throws RepositoryException {
+        contentCreator.init(createImportOptions(NO_OPTIONS),
+                new HashMap<String, ContentReader>(), null, null);
+        contentCreator.prepareParsing(parentNode, null);
+
+        final String userName = uniqueId();
+        contentCreator.createUser(userName, "Test", null);
+
+        List<LocalPrivilege> list = new ArrayList<>();
+        LocalPrivilege readLp = new LocalPrivilege(PrivilegeConstants.JCR_READ);
+        readLp.setAllow(true);
+        readLp.setAllowRestrictions(Collections.singleton(new LocalRestriction(AccessControlConstants.REP_GLOB, val("glob1allow"))));
+        list.add(readLp);
+        LocalPrivilege writeLp = new LocalPrivilege(PrivilegeConstants.JCR_WRITE);
+        writeLp.setDeny(true);
+        writeLp.setDenyRestrictions(Collections.singleton(new LocalRestriction(AccessControlConstants.REP_ITEM_NAMES, vals(session.getValueFactory(), PropertyType.NAME, "name1", "name2"))));
+        list.add(writeLp);
+        contentCreator.createAce(userName, list, null);
+        // call again to verify the old aces are replaced with the new ones
+        contentCreator.createAce(userName, list, null);
+
+        contentCreator.finishNode();
+
+        //verify ACE was set.
+        List<AccessControlEntry> allEntries = allEntries();
+        assertEquals(2, allEntries.size());
+        assertAce(allEntries.get(0), userName,
+                false, // isAllow
+                new String[] {PrivilegeConstants.JCR_WRITE}, // PrivilegeNames
+                new String[] {AccessControlConstants.REP_ITEM_NAMES}, // RestrictionNames
+                new String[][] {new String[]{"name1", "name2"}}); // RestrictionValues
+        assertAce(allEntries.get(1), userName,
+                true, // isAllow
+                new String[] {PrivilegeConstants.JCR_READ}, // PrivilegeNames
+                new String[] {AccessControlConstants.REP_GLOB}, // RestrictionNames
+                new String[][] {new String[]{"glob1allow"}}); // RestrictionValues
+    }
+
+    @Test
+    public void createAceWithNullPrivileges() throws RepositoryException {
+        contentCreator.init(createImportOptions(NO_OPTIONS),
+                new HashMap<String, ContentReader>(), null, null);
+        contentCreator.prepareParsing(parentNode, null);
+
+        final String userName = uniqueId();
+        contentCreator.createUser(userName, "Test", null);
+
+        // try all null privilege args
+        contentCreator.createAce(userName, null, null, null);
+
+        contentCreator.finishNode();
+
+        //verify ACE was set.
+        List<AccessControlEntry> allEntries = allEntries();
+        assertEquals(0, allEntries.size());
+    }
+
+    @Test
+    public void createAceWithNullPrincipal() throws RepositoryException {
+        contentCreator.init(createImportOptions(NO_OPTIONS),
+                new HashMap<String, ContentReader>(), null, null);
+        contentCreator.prepareParsing(parentNode, null);
+
+        final String userName = uniqueId();
+        contentCreator.createUser(userName, "Test", null);
+
+        // try null principal
+        assertThrows("No principal found for id: null", RepositoryException.class, () -> {
+            contentCreator.createAce(null, new String[] {PrivilegeConstants.JCR_READ}, 
+                    new String[] {PrivilegeConstants.JCR_WRITE}, null);
+        });
+
+        contentCreator.finishNode();
+
+        //verify ACE was not set.
+        List<AccessControlEntry> allEntries = allEntries();
+        assertEquals(0, allEntries.size());
+    }
+
+    @Test
+    public void createAceWithInvalidPrincipal() throws RepositoryException {
+        contentCreator.init(createImportOptions(NO_OPTIONS),
+                new HashMap<String, ContentReader>(), null, null);
+        contentCreator.prepareParsing(parentNode, null);
+
+        final String userName = uniqueId();
+
+        // try non-existing principal
+        assertThrows(String.format("No principal found for id: %s", userName), RepositoryException.class, () -> {
+            contentCreator.createAce(userName, new String[] {PrivilegeConstants.JCR_READ}, 
+                    new String[] {PrivilegeConstants.JCR_WRITE}, null);
+        });
+
+        contentCreator.finishNode();
+
+        //verify ACE was set.
+        List<AccessControlEntry> allEntries = allEntries();
+        assertEquals(0, allEntries.size());
+    }
+
+    @Test
+    public void createAceWithOrderByNull() throws RepositoryException {
+        createAceWithOrderBy(null);
+    }
+
+    protected void createAceWithOrderBy(String orderBy) throws RepositoryException, ValueFormatException,
+            UnsupportedRepositoryOperationException, PathNotFoundException, AccessDeniedException {
+        contentCreator.init(createImportOptions(NO_OPTIONS),
+                new HashMap<String, ContentReader>(), null, null);
+        contentCreator.prepareParsing(parentNode, null);
+
+        final String userName = uniqueId();
+        contentCreator.createUser(userName, "Test", null);
+
+        final String groupName = uniqueId();
+        contentCreator.createGroup(groupName, null, null);
+
+        List<LocalPrivilege> list = new ArrayList<>();
+        LocalPrivilege readLp = new LocalPrivilege(PrivilegeConstants.JCR_READ);
+        readLp.setAllow(true);
+        readLp.setAllowRestrictions(Collections.singleton(new LocalRestriction(AccessControlConstants.REP_GLOB, val("glob1allow"))));
+        list.add(readLp);
+        LocalPrivilege writeLp = new LocalPrivilege(PrivilegeConstants.JCR_WRITE);
+        writeLp.setDeny(true);
+        writeLp.setDenyRestrictions(Collections.singleton(new LocalRestriction(AccessControlConstants.REP_ITEM_NAMES, vals(session.getValueFactory(), PropertyType.NAME, "name1", "name2"))));
+        list.add(writeLp);
+        contentCreator.createAce(userName, list, null);
+        contentCreator.createAce(groupName, list, orderBy);
+
+        contentCreator.finishNode();
+
+        //verify ACE was set.
+        List<AccessControlEntry> allEntries = allEntries();
+        assertEquals(4, allEntries.size());
+        assertAce(allEntries.get(0), userName,
+                false, // isAllow
+                new String[] {PrivilegeConstants.JCR_WRITE}, // PrivilegeNames
+                new String[] {AccessControlConstants.REP_ITEM_NAMES}, // RestrictionNames
+                new String[][] {new String[]{"name1", "name2"}}); // RestrictionValues
+        assertAce(allEntries.get(1), userName,
+                true, // isAllow
+                new String[] {PrivilegeConstants.JCR_READ}, // PrivilegeNames
+                new String[] {AccessControlConstants.REP_GLOB}, // RestrictionNames
+                new String[][] {new String[]{"glob1allow"}}); // RestrictionValues
+        assertAce(allEntries.get(2), groupName,
+                false, // isAllow
+                new String[] {PrivilegeConstants.JCR_WRITE}, // PrivilegeNames
+                new String[] {AccessControlConstants.REP_ITEM_NAMES}, // RestrictionNames
+                new String[][] {new String[]{"name1", "name2"}}); // RestrictionValues
+        assertAce(allEntries.get(3), groupName,
+                true, // isAllow
+                new String[] {PrivilegeConstants.JCR_READ}, // PrivilegeNames
+                new String[] {AccessControlConstants.REP_GLOB}, // RestrictionNames
+                new String[][] {new String[]{"glob1allow"}}); // RestrictionValues
+    }
+
+    @Test
+    public void createAceWithOrderByEmpty() throws RepositoryException {
+        createAceWithOrderBy("");
+    }
+
+    @Test
+    public void createAceWithOrderByFirst() throws RepositoryException {
+        contentCreator.init(createImportOptions(NO_OPTIONS),
+                new HashMap<String, ContentReader>(), null, null);
+        contentCreator.prepareParsing(parentNode, null);
+
+        final String userName = uniqueId();
+        contentCreator.createUser(userName, "Test", null);
+
+        final String groupName = uniqueId();
+        contentCreator.createGroup(groupName, null, null);
+
+        List<LocalPrivilege> list = new ArrayList<>();
+        LocalPrivilege readLp = new LocalPrivilege(PrivilegeConstants.JCR_READ);
+        readLp.setAllow(true);
+        readLp.setAllowRestrictions(Collections.singleton(new LocalRestriction(AccessControlConstants.REP_GLOB, val("glob1allow"))));
+        list.add(readLp);
+        LocalPrivilege writeLp = new LocalPrivilege(PrivilegeConstants.JCR_WRITE);
+        writeLp.setDeny(true);
+        writeLp.setDenyRestrictions(Collections.singleton(new LocalRestriction(AccessControlConstants.REP_ITEM_NAMES, vals(session.getValueFactory(), PropertyType.NAME, "name1", "name2"))));
+        list.add(writeLp);
+        contentCreator.createAce(userName, list, null);
+        contentCreator.createAce(groupName, list, "first");
+
+        contentCreator.finishNode();
+
+        //verify ACE was set.
+        List<AccessControlEntry> allEntries = allEntries();
+        assertEquals(4, allEntries.size());
+        assertAce(allEntries.get(0), groupName,
+                false, // isAllow
+                new String[] {PrivilegeConstants.JCR_WRITE}, // PrivilegeNames
+                new String[] {AccessControlConstants.REP_ITEM_NAMES}, // RestrictionNames
+                new String[][] {new String[]{"name1", "name2"}}); // RestrictionValues
+        assertAce(allEntries.get(1), groupName,
+                true, // isAllow
+                new String[] {PrivilegeConstants.JCR_READ}, // PrivilegeNames
+                new String[] {AccessControlConstants.REP_GLOB}, // RestrictionNames
+                new String[][] {new String[]{"glob1allow"}}); // RestrictionValues
+        assertAce(allEntries.get(2), userName,
+                false, // isAllow
+                new String[] {PrivilegeConstants.JCR_WRITE}, // PrivilegeNames
+                new String[] {AccessControlConstants.REP_ITEM_NAMES}, // RestrictionNames
+                new String[][] {new String[]{"name1", "name2"}}); // RestrictionValues
+        assertAce(allEntries.get(3), userName,
+                true, // isAllow
+                new String[] {PrivilegeConstants.JCR_READ}, // PrivilegeNames
+                new String[] {AccessControlConstants.REP_GLOB}, // RestrictionNames
+                new String[][] {new String[]{"glob1allow"}}); // RestrictionValues
+    }
+
+    @Test
+    public void createAceWithOrderByLast() throws RepositoryException {
+        createAceWithOrderBy("last");
+    }
+
+    @Test
+    public void createAceWithOrderByAfter() throws RepositoryException {
+        contentCreator.init(createImportOptions(NO_OPTIONS),
+                new HashMap<String, ContentReader>(), null, null);
+        contentCreator.prepareParsing(parentNode, null);
+
+        final String userName = uniqueId();
+        contentCreator.createUser(userName, "Test", null);
+
+        final String userName2 = uniqueId();
+        contentCreator.createUser(userName2, "Test", null);
+
+        final String groupName = uniqueId();
+        contentCreator.createGroup(groupName, null, null);
+
+        List<LocalPrivilege> list = new ArrayList<>();
+        LocalPrivilege readLp = new LocalPrivilege(PrivilegeConstants.JCR_READ);
+        readLp.setAllow(true);
+        readLp.setAllowRestrictions(Collections.singleton(new LocalRestriction(AccessControlConstants.REP_GLOB, val("glob1allow"))));
+        list.add(readLp);
+        LocalPrivilege writeLp = new LocalPrivilege(PrivilegeConstants.JCR_WRITE);
+        writeLp.setDeny(true);
+        writeLp.setDenyRestrictions(Collections.singleton(new LocalRestriction(AccessControlConstants.REP_ITEM_NAMES, vals(session.getValueFactory(), PropertyType.NAME, "name1", "name2"))));
+        list.add(writeLp);
+        contentCreator.createAce(userName, list, null);
+        contentCreator.createAce(userName2, list, null);
+        contentCreator.createAce(groupName, list, String.format("after %s", userName));
+
+        contentCreator.finishNode();
+
+        //verify ACE was set.
+        List<AccessControlEntry> allEntries = allEntries();
+        assertEquals(6, allEntries.size());
+        assertAce(allEntries.get(0), userName,
+                false, // isAllow
+                new String[] {PrivilegeConstants.JCR_WRITE}, // PrivilegeNames
+                new String[] {AccessControlConstants.REP_ITEM_NAMES}, // RestrictionNames
+                new String[][] {new String[]{"name1", "name2"}}); // RestrictionValues
+        assertAce(allEntries.get(1), userName,
+                true, // isAllow
+                new String[] {PrivilegeConstants.JCR_READ}, // PrivilegeNames
+                new String[] {AccessControlConstants.REP_GLOB}, // RestrictionNames
+                new String[][] {new String[]{"glob1allow"}}); // RestrictionValues
+        assertAce(allEntries.get(2), groupName,
+                false, // isAllow
+                new String[] {PrivilegeConstants.JCR_WRITE}, // PrivilegeNames
+                new String[] {AccessControlConstants.REP_ITEM_NAMES}, // RestrictionNames
+                new String[][] {new String[]{"name1", "name2"}}); // RestrictionValues
+        assertAce(allEntries.get(3), groupName,
+                true, // isAllow
+                new String[] {PrivilegeConstants.JCR_READ}, // PrivilegeNames
+                new String[] {AccessControlConstants.REP_GLOB}, // RestrictionNames
+                new String[][] {new String[]{"glob1allow"}}); // RestrictionValues
+        assertAce(allEntries.get(4), userName2,
+                false, // isAllow
+                new String[] {PrivilegeConstants.JCR_WRITE}, // PrivilegeNames
+                new String[] {AccessControlConstants.REP_ITEM_NAMES}, // RestrictionNames
+                new String[][] {new String[]{"name1", "name2"}}); // RestrictionValues
+        assertAce(allEntries.get(5), userName2,
+                true, // isAllow
+                new String[] {PrivilegeConstants.JCR_READ}, // PrivilegeNames
+                new String[] {AccessControlConstants.REP_GLOB}, // RestrictionNames
+                new String[][] {new String[]{"glob1allow"}}); // RestrictionValues
+    }
+
+    @Test
+    public void createAceWithOrderByBefore() throws RepositoryException {
+        contentCreator.init(createImportOptions(NO_OPTIONS),
+                new HashMap<String, ContentReader>(), null, null);
+        contentCreator.prepareParsing(parentNode, null);
+
+        final String userName = uniqueId();
+        contentCreator.createUser(userName, "Test", null);
+
+        final String groupName = uniqueId();
+        contentCreator.createGroup(groupName, null, null);
+
+        List<LocalPrivilege> list = new ArrayList<>();
+        LocalPrivilege readLp = new LocalPrivilege(PrivilegeConstants.JCR_READ);
+        readLp.setAllow(true);
+        readLp.setAllowRestrictions(Collections.singleton(new LocalRestriction(AccessControlConstants.REP_GLOB, val("glob1allow"))));
+        list.add(readLp);
+        LocalPrivilege writeLp = new LocalPrivilege(PrivilegeConstants.JCR_WRITE);
+        writeLp.setDeny(true);
+        writeLp.setDenyRestrictions(Collections.singleton(new LocalRestriction(AccessControlConstants.REP_ITEM_NAMES, vals(session.getValueFactory(), PropertyType.NAME, "name1", "name2"))));
+        list.add(writeLp);
+        contentCreator.createAce(userName, list, null);
+        contentCreator.createAce(groupName, list, String.format("before %s", userName));
+
+        contentCreator.finishNode();
+
+        //verify ACE was set.
+        List<AccessControlEntry> allEntries = allEntries();
+        assertEquals(4, allEntries.size());
+        assertAce(allEntries.get(0), groupName,
+                false, // isAllow
+                new String[] {PrivilegeConstants.JCR_WRITE}, // PrivilegeNames
+                new String[] {AccessControlConstants.REP_ITEM_NAMES}, // RestrictionNames
+                new String[][] {new String[]{"name1", "name2"}}); // RestrictionValues
+        assertAce(allEntries.get(1), groupName,
+                true, // isAllow
+                new String[] {PrivilegeConstants.JCR_READ}, // PrivilegeNames
+                new String[] {AccessControlConstants.REP_GLOB}, // RestrictionNames
+                new String[][] {new String[]{"glob1allow"}}); // RestrictionValues
+        assertAce(allEntries.get(2), userName,
+                false, // isAllow
+                new String[] {PrivilegeConstants.JCR_WRITE}, // PrivilegeNames
+                new String[] {AccessControlConstants.REP_ITEM_NAMES}, // RestrictionNames
+                new String[][] {new String[]{"name1", "name2"}}); // RestrictionValues
+        assertAce(allEntries.get(3), userName,
+                true, // isAllow
+                new String[] {PrivilegeConstants.JCR_READ}, // PrivilegeNames
+                new String[] {AccessControlConstants.REP_GLOB}, // RestrictionNames
+                new String[][] {new String[]{"glob1allow"}}); // RestrictionValues
+    }
+
+    @Test
+    public void createAceWithOrderByAfterInvalid() throws RepositoryException {
+        contentCreator.init(createImportOptions(NO_OPTIONS),
+                new HashMap<String, ContentReader>(), null, null);
+        contentCreator.prepareParsing(parentNode, null);
+
+        final String userName = uniqueId();
+        contentCreator.createUser(userName, "Test", null);
+
+        List<LocalPrivilege> list = new ArrayList<>();
+        LocalPrivilege readLp = new LocalPrivilege(PrivilegeConstants.JCR_READ);
+        readLp.setAllow(true);
+        readLp.setAllowRestrictions(Collections.singleton(new LocalRestriction(AccessControlConstants.REP_GLOB, val("glob1allow"))));
+        list.add(readLp);
+        LocalPrivilege writeLp = new LocalPrivilege(PrivilegeConstants.JCR_WRITE);
+        writeLp.setDeny(true);
+        writeLp.setDenyRestrictions(Collections.singleton(new LocalRestriction(AccessControlConstants.REP_ITEM_NAMES, vals(session.getValueFactory(), PropertyType.NAME, "name1", "name2"))));
+        list.add(writeLp);
+        assertThrows("No ACE was found for the specified principal: invalid", IllegalArgumentException.class, () -> {
+            contentCreator.createAce(userName, list, "after invalid");
+        });
+
+        contentCreator.finishNode();
+
+        //verify ACE was set.
+        List<AccessControlEntry> allEntries = allEntries();
+        assertEquals(0, allEntries.size());
+    }
+
+    @Test
+    public void createAceWithOrderByBeforeInvalid() throws RepositoryException {
+        contentCreator.init(createImportOptions(NO_OPTIONS),
+                new HashMap<String, ContentReader>(), null, null);
+        contentCreator.prepareParsing(parentNode, null);
+
+        final String userName = uniqueId();
+        contentCreator.createUser(userName, "Test", null);
+
+        List<LocalPrivilege> list = new ArrayList<>();
+        LocalPrivilege readLp = new LocalPrivilege(PrivilegeConstants.JCR_READ);
+        readLp.setAllow(true);
+        readLp.setAllowRestrictions(Collections.singleton(new LocalRestriction(AccessControlConstants.REP_GLOB, val("glob1allow"))));
+        list.add(readLp);
+        LocalPrivilege writeLp = new LocalPrivilege(PrivilegeConstants.JCR_WRITE);
+        writeLp.setDeny(true);
+        writeLp.setDenyRestrictions(Collections.singleton(new LocalRestriction(AccessControlConstants.REP_ITEM_NAMES, vals(session.getValueFactory(), PropertyType.NAME, "name1", "name2"))));
+        list.add(writeLp);
+        assertThrows("No ACE was found for the specified principal: invalid", IllegalArgumentException.class, () -> {
+            contentCreator.createAce(userName, list, "before invalid");
+        });
+
+        contentCreator.finishNode();
+
+        //verify ACE was set.
+        List<AccessControlEntry> allEntries = allEntries();
+        assertEquals(0, allEntries.size());
+    }
+
+    @Test
+    public void createAceWithOrderByIndex() throws RepositoryException {
+        contentCreator.init(createImportOptions(NO_OPTIONS),
+                new HashMap<String, ContentReader>(), null, null);
+        contentCreator.prepareParsing(parentNode, null);
+
+        final String userName = uniqueId();
+        contentCreator.createUser(userName, "Test", null);
+
+        final String userName2 = uniqueId();
+        contentCreator.createUser(userName2, "Test", null);
+
+        final String groupName = uniqueId();
+        contentCreator.createGroup(groupName, null, null);
+
+        List<LocalPrivilege> list = new ArrayList<>();
+        LocalPrivilege readLp = new LocalPrivilege(PrivilegeConstants.JCR_READ);
+        readLp.setAllow(true);
+        readLp.setAllowRestrictions(Collections.singleton(new LocalRestriction(AccessControlConstants.REP_GLOB, val("glob1allow"))));
+        list.add(readLp);
+        LocalPrivilege writeLp = new LocalPrivilege(PrivilegeConstants.JCR_WRITE);
+        writeLp.setDeny(true);
+        writeLp.setDenyRestrictions(Collections.singleton(new LocalRestriction(AccessControlConstants.REP_ITEM_NAMES, vals(session.getValueFactory(), PropertyType.NAME, "name1", "name2"))));
+        list.add(writeLp);
+        contentCreator.createAce(userName, list, null);
+        contentCreator.createAce(userName2, list, null);
+        contentCreator.createAce(groupName, list, "1");
+
+        contentCreator.finishNode();
+
+        //verify ACE was set.
+        List<AccessControlEntry> allEntries = allEntries();
+        assertEquals(6, allEntries.size());
+        assertAce(allEntries.get(0), userName,
+                false, // isAllow
+                new String[] {PrivilegeConstants.JCR_WRITE}, // PrivilegeNames
+                new String[] {AccessControlConstants.REP_ITEM_NAMES}, // RestrictionNames
+                new String[][] {new String[]{"name1", "name2"}}); // RestrictionValues
+        assertAce(allEntries.get(1), userName,
+                true, // isAllow
+                new String[] {PrivilegeConstants.JCR_READ}, // PrivilegeNames
+                new String[] {AccessControlConstants.REP_GLOB}, // RestrictionNames
+                new String[][] {new String[]{"glob1allow"}}); // RestrictionValues
+        assertAce(allEntries.get(2), groupName,
+                false, // isAllow
+                new String[] {PrivilegeConstants.JCR_WRITE}, // PrivilegeNames
+                new String[] {AccessControlConstants.REP_ITEM_NAMES}, // RestrictionNames
+                new String[][] {new String[]{"name1", "name2"}}); // RestrictionValues
+        assertAce(allEntries.get(3), groupName,
+                true, // isAllow
+                new String[] {PrivilegeConstants.JCR_READ}, // PrivilegeNames
+                new String[] {AccessControlConstants.REP_GLOB}, // RestrictionNames
+                new String[][] {new String[]{"glob1allow"}}); // RestrictionValues
+        assertAce(allEntries.get(4), userName2,
+                false, // isAllow
+                new String[] {PrivilegeConstants.JCR_WRITE}, // PrivilegeNames
+                new String[] {AccessControlConstants.REP_ITEM_NAMES}, // RestrictionNames
+                new String[][] {new String[]{"name1", "name2"}}); // RestrictionValues
+        assertAce(allEntries.get(5), userName2,
+                true, // isAllow
+                new String[] {PrivilegeConstants.JCR_READ}, // PrivilegeNames
+                new String[] {AccessControlConstants.REP_GLOB}, // RestrictionNames
+                new String[][] {new String[]{"glob1allow"}}); // RestrictionValues
+    }
+
+    @Test
+    public void createAceWithOrderByInvalid() throws RepositoryException {
+        contentCreator.init(createImportOptions(NO_OPTIONS),
+                new HashMap<String, ContentReader>(), null, null);
+        contentCreator.prepareParsing(parentNode, null);
+
+        final String userName = uniqueId();
+        contentCreator.createUser(userName, "Test", null);
+
+        List<LocalPrivilege> list = new ArrayList<>();
+        LocalPrivilege readLp = new LocalPrivilege(PrivilegeConstants.JCR_READ);
+        readLp.setAllow(true);
+        readLp.setAllowRestrictions(Collections.singleton(new LocalRestriction(AccessControlConstants.REP_GLOB, val("glob1allow"))));
+        list.add(readLp);
+        LocalPrivilege writeLp = new LocalPrivilege(PrivilegeConstants.JCR_WRITE);
+        writeLp.setDeny(true);
+        writeLp.setDenyRestrictions(Collections.singleton(new LocalRestriction(AccessControlConstants.REP_ITEM_NAMES, vals(session.getValueFactory(), PropertyType.NAME, "name1", "name2"))));
+        list.add(writeLp);
+        assertThrows("Illegal value for the order parameter: invalid", IllegalArgumentException.class, () -> {
+            contentCreator.createAce(userName, list, "invalid");
+        });
+
+        contentCreator.finishNode();
+    }
+
+    @Test
+    public void createAceWithOrderByIndexTooLarge() throws RepositoryException {
+        contentCreator.init(createImportOptions(NO_OPTIONS),
+                new HashMap<String, ContentReader>(), null, null);
+        contentCreator.prepareParsing(parentNode, null);
+
+        final String userName = uniqueId();
+        contentCreator.createUser(userName, "Test", null);
+
+        List<LocalPrivilege> list = new ArrayList<>();
+        LocalPrivilege readLp = new LocalPrivilege(PrivilegeConstants.JCR_READ);
+        readLp.setAllow(true);
+        readLp.setAllowRestrictions(Collections.singleton(new LocalRestriction(AccessControlConstants.REP_GLOB, val("glob1allow"))));
+        list.add(readLp);
+        LocalPrivilege writeLp = new LocalPrivilege(PrivilegeConstants.JCR_WRITE);
+        writeLp.setDeny(true);
+        writeLp.setDenyRestrictions(Collections.singleton(new LocalRestriction(AccessControlConstants.REP_ITEM_NAMES, vals(session.getValueFactory(), PropertyType.NAME, "name1", "name2"))));
+        list.add(writeLp);
+        assertThrows("Index value is too large: 100", IndexOutOfBoundsException.class, () -> {
+            contentCreator.createAce(userName, list, "100");
+        });
+
+        contentCreator.finishNode();
+    }
+
+    protected List<AccessControlEntry> allEntries() throws UnsupportedRepositoryOperationException, RepositoryException,
+            PathNotFoundException, AccessDeniedException {
+        AccessControlManager accessControlManager = AccessControlUtil.getAccessControlManager(session);
+        AccessControlPolicy[] policies = accessControlManager.getPolicies(parentNode.getPath());
+        List<AccessControlEntry> allEntries = new ArrayList<AccessControlEntry>();
+        for (AccessControlPolicy accessControlPolicy : policies) {
+            if (accessControlPolicy instanceof AccessControlList) {
+                AccessControlEntry[] accessControlEntries = ((AccessControlList) accessControlPolicy).getAccessControlEntries();
+                allEntries.addAll(Arrays.asList(accessControlEntries));
+            }
+        }
+        return allEntries;
     }
 
     private final String uniqueId() {
