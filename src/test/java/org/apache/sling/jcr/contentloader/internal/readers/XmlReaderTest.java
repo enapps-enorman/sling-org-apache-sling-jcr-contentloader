@@ -18,23 +18,18 @@
  */
 package org.apache.sling.jcr.contentloader.internal.readers;
 
-import java.io.BufferedReader;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertThrows;
+
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.jcr.RepositoryException;
-import javax.jcr.Value;
-
-import org.apache.sling.jcr.contentloader.ContentCreator;
 
 import junit.framework.TestCase;
 
@@ -69,10 +64,31 @@ public class XmlReaderTest extends TestCase {
             // Expected
         }
         assertEquals("mimeType mismatch", "application/test", file.mimeType);
-        assertEquals("lastModified mismatch", XmlReader.FileDescription.DATE_FORMAT.parse("1977-06-01T07:00:00+0100"),
+        assertEquals("lastModified mismatch", XmlReader.FileDescription.createDateFormat().parse("1977-06-01T07:00:00+0100"),
                 new Date(file.lastModified));
         assertEquals("Could not read file", "This is a test file.", file.content);
+    }
 
+    /**
+     * Test the properties and types were processed
+     */
+    public void testCreateTypesAndProperties() throws Exception {
+        File input = new File("src/test/resources/reader/filesample.xml");
+        final URL testdata = input.toURI().toURL();
+        reader.parse(testdata, creator);
+
+        assertEquals(1, creator.size());
+        Map<String, Object> map = creator.get(0);
+        assertEquals("nodeName", map.get("name"));
+        assertEquals("type", map.get("primaryNodeType"));
+        assertArrayEquals(new String[] {"mixtype1", "mixtype2"}, (String[])map.get("mixinNodeTypes"));
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> propsMap = (Map<String, Object>)map.get("properties");
+        assertNotNull(propsMap);
+        assertEquals("propValue", propsMap.get("propName"));
+        assertArrayEquals(new String[] {"propValue1", "propValue2"}, (String[])propsMap.get("multiPropName"));
+        assertNull(propsMap.get("multiPropName2"));
     }
 
     public void testCreateFileWithNullLocation() throws Exception {
@@ -106,93 +122,46 @@ public class XmlReaderTest extends TestCase {
         creator = new MockContentCreator();
     }
 
-    @SuppressWarnings("serial")
-    private static class MockContentCreator extends ArrayList<String> implements ContentCreator {
-
-        public static class FileDescription {
-            public InputStream data;
-            public String mimeType;
-            public long lastModified;
-            public String content;
-
-            public FileDescription(InputStream data, String mimeType, long lastModified) throws IOException {
-                this.data = data;
-                this.mimeType = mimeType;
-                this.lastModified = lastModified;
-                BufferedReader reader = new BufferedReader(new InputStreamReader(data));
-                this.content = reader.readLine();
-                reader.close();
-            }
+    private void malformedXmlTest(String xml, String expectedMsg) throws Exception {
+        try (ByteArrayInputStream is = new ByteArrayInputStream(xml.getBytes())) {
+            IOException ioe = assertThrows(IOException.class, () -> reader.parse(is, creator));
+            assertEquals(expectedMsg, ioe.getMessage());
         }
-
-        public List<FileDescription> filesCreated = new ArrayList<FileDescription>();
-
-        public MockContentCreator() {
-        }
-
-        public void createNode(String name, String primaryNodeType, String[] mixinNodeTypes)
-                throws RepositoryException {
-            this.add(name);
-        }
-
-        public void finishNode() throws RepositoryException {
-        }
-
-        public void createProperty(String name, int propertyType, String value) throws RepositoryException {
-        }
-
-        public void createProperty(String name, int propertyType, String[] values) throws RepositoryException {
-        }
-
-        public void createProperty(String name, Object value) throws RepositoryException {
-        }
-
-        public void createProperty(String name, Object[] values) throws RepositoryException {
-        }
-
-        public void createFileAndResourceNode(String name, InputStream data, String mimeType, long lastModified)
-                throws RepositoryException {
-            try {
-                this.filesCreated.add(new FileDescription(data, mimeType, lastModified));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        public boolean switchCurrentNode(String subPath, String newNodeType) throws RepositoryException {
-            return true;
-        }
-
-        public void createAce(String principal, String[] grantedPrivileges, String[] deniedPrivileges, String order)
-                throws RepositoryException {
-        }
-
-        /*
-         * (non-Javadoc)
-         * 
-         * @see
-         * org.apache.sling.jcr.contentloader.ContentCreator#createAce(java.lang.String,
-         * java.lang.String[], java.lang.String[], java.lang.String, java.util.Map,
-         * java.util.Map, java.util.Set)
-         */
-        @Override
-        public void createAce(String principal, String[] grantedPrivileges, String[] deniedPrivileges, String order,
-                Map<String, Value> restrictions, Map<String, Value[]> mvRestrictions,
-                Set<String> removedRestrictionNames) throws RepositoryException {
-        }
-
-        public void createGroup(String name, String[] members, Map<String, Object> extraProperties)
-                throws RepositoryException {
-        }
-
-        public void createUser(String name, String password, Map<String, Object> extraProperties)
-                throws RepositoryException {
-        }
-
-        @Override
-        public void finish() throws RepositoryException {
-            
-        }
-
     }
+
+    public void testMalformedXmlUnexpectedPropertyElement() throws Exception {
+        malformedXmlTest("<property/>",
+                "XML file does not seem to contain valid content xml. Expected name element for property in : null");
+    }
+
+    public void testMalformedXmlUnexpectedNameElement() throws Exception {
+        malformedXmlTest("<name></name>",
+                "XML file does not seem to contain valid content xml. Unexpected name element in : null");
+    }
+
+    public void testMalformedXmlUnexpectedValueElement() throws Exception {
+        malformedXmlTest("<value></value>",
+                "XML file does not seem to contain valid content xml. Unexpected value element in : null");
+    }
+
+    public void testMalformedXmlUnexpectedValuesElement() throws Exception {
+        malformedXmlTest("<values></values>",
+                "XML file does not seem to contain valid content xml. Unexpected values element in : null");
+    }
+
+    public void testMalformedXmlUnexpectedTypeElement() throws Exception {
+        malformedXmlTest("<type></type>",
+                "XML file does not seem to contain valid content xml. Unexpected type element in : null");
+    }
+
+    public void testMalformedXmlUnexpectedPrimaryNodeTypeElement() throws Exception {
+        malformedXmlTest("<primaryNodeType></primaryNodeType>",
+                "Element is not allowed at this location: primaryNodeType in null");
+    }
+
+    public void testMalformedXmlUnexpectedMixinNodeTypeElement() throws Exception {
+        malformedXmlTest("<mixinNodeType></mixinNodeType>",
+                "Element is not allowed at this location: mixinNodeType in null");
+    }
+
 }

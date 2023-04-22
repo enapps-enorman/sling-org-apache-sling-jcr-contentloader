@@ -28,6 +28,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.lang.annotation.Annotation;
+import java.net.URL;
 import java.security.Principal;
 
 import javax.jcr.AccessDeniedException;
@@ -48,6 +49,7 @@ import org.apache.jackrabbit.api.security.authorization.PrivilegeManager;
 import org.apache.jackrabbit.commons.JcrUtils;
 import org.apache.jackrabbit.oak.spi.security.principal.EveryonePrincipal;
 import org.apache.sling.api.resource.Resource;
+import org.apache.sling.jcr.contentloader.ContentReader;
 import org.apache.sling.jcr.contentloader.internal.readers.JsonReader;
 import org.apache.sling.jcr.contentloader.internal.readers.OrderedJsonReader;
 import org.apache.sling.jcr.contentloader.internal.readers.XmlReader;
@@ -60,6 +62,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.osgi.framework.Bundle;
 
 public class BundleContentLoaderTest {
@@ -158,7 +161,7 @@ public class BundleContentLoaderTest {
 
     @Test
     public void loadContentOverwriteWith2ndLevelPath() throws Exception {
-        AccessControlEntry[] expectedAces = createFolderNodeAndACL("/apps/child");
+        /*AccessControlEntry[] expectedAces =*/ createFolderNodeAndACL("/apps/child");
         BundleContentLoader contentLoader = new BundleContentLoader(bundleHelper, whiteboard, null);
         Bundle mockBundle = newBundleWithInitialContent(context, "SLING-INF2/apps;overwrite:=true;path:=/apps");
         contentLoader.registerBundle(context.resourceResolver().adaptTo(Session.class), mockBundle, false);
@@ -331,6 +334,26 @@ public class BundleContentLoaderTest {
 
         assertThat("XML file was was not imported", xmlFile, notNullValue());
 
+    }
+
+    @Test
+    public void testDescriptorGetSetUrl() throws Exception {
+        BundleContentLoader.Descriptor desc = new BundleContentLoader.Descriptor();
+
+        assertNull(desc.getUrl());
+        URL mockUrl = Mockito.mock(URL.class);
+        desc.setUrl(mockUrl);
+        assertEquals(mockUrl, desc.getUrl());
+    }
+
+    @Test
+    public void testDescriptorGetSetContentReader() throws Exception {
+        BundleContentLoader.Descriptor desc = new BundleContentLoader.Descriptor();
+
+        assertNull(desc.getContentReader());
+        ContentReader mockReader = Mockito.mock(ContentReader.class);
+        desc.setContentReader(mockReader);
+        assertEquals(mockReader, desc.getContentReader());
     }
 
     public static MockBundle newBundleWithInitialContent(SlingContext context, String initialContentHeader) {
