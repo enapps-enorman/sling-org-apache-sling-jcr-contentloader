@@ -19,7 +19,6 @@
 package org.apache.sling.jcr.contentloader.it;
 
 import static org.apache.felix.hc.api.FormattingResultLog.msHumanReadable;
-import static org.apache.sling.testing.paxexam.SlingOptions.awaitility;
 import static org.apache.sling.testing.paxexam.SlingOptions.slingQuickstartOakTar;
 import static org.apache.sling.testing.paxexam.SlingOptions.slingResourcePresence;
 import static org.junit.Assert.assertEquals;
@@ -117,17 +116,10 @@ public abstract class ContentloaderTestSupport extends TestSupport {
             vmOption = new VMOption(vmOpt);
         }
 
-        final String jacocoOpt = System.getProperty("jacoco.command");
-        VMOption jacocoCommand = null;
-        if (jacocoOpt != null && !jacocoOpt.isEmpty()) {
-            jacocoCommand = new VMOption(jacocoOpt);
-        }
-
         final Option contentloader = mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.jcr.contentloader").version(SlingOptions.versionResolver.getVersion("org.apache.sling", "org.apache.sling.jcr.contentloader"));
         return composite(
             super.baseConfiguration(),
             when(vmOption != null).useOptions(vmOption),
-            when(jacocoCommand != null).useOptions(jacocoCommand),
             mavenBundle().groupId("org.glassfish").artifactId("jakarta.json").version("2.0.1"),
             quickstart(),
             // SLING-9735 - add server user for the o.a.s.jcr.contentloader bundle
@@ -170,6 +162,20 @@ public abstract class ContentloaderTestSupport extends TestSupport {
         final String workingDirectory = workingDirectory();
         return slingQuickstartOakTar(workingDirectory, httpPort);
     }
+
+    /**
+     * Replacement for {@link SlingOptions#awaitility()} to utilize a newer version of awaitility
+     * <p>
+     * NOTE: may remove this at a later date and go back to {@link SlingOptions#awaitility()} whenever
+     * {@link org.apache.sling.testing.paxexam.SlingVersionResolver} provides these versions or later
+     */
+    public static ModifiableCompositeOption awaitility() {
+        return composite(
+                mavenBundle().groupId("org.awaitility").artifactId("awaitility").versionAsInProject(),
+                mavenBundle().groupId("org.hamcrest").artifactId("hamcrest").version(SlingOptions.versionResolver)
+        );
+    }
+
 
     @Before
     public void setup() throws Exception {
