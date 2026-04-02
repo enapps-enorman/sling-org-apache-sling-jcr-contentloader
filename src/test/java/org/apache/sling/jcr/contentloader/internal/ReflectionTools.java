@@ -19,6 +19,8 @@
 package org.apache.sling.jcr.contentloader.internal;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 import static org.junit.Assert.fail;
@@ -30,6 +32,42 @@ public class ReflectionTools {
 
     private ReflectionTools() {
         // hide the public constructor
+    }
+
+    public static <T> T invokeMethodWithReflection(
+            Object obj, String methodName, Class<?>[] parameterTypes, Class<T> expectedType, Object[] methodArgs) {
+        Object result = null;
+        try {
+            Class<?> clazz = obj.getClass();
+            Method method = null;
+            do {
+                try { // NOSONAR
+                    method = clazz.getDeclaredMethod(methodName, parameterTypes);
+                } catch (NoSuchMethodException nsfe) {
+                    clazz = clazz.getSuperclass();
+                }
+            } while (method == null && clazz != null);
+            if (method != null) {
+                if (Modifier.isStatic(method.getModifiers())) {
+                    if (!method.canAccess(null)) {
+                        method.setAccessible(true);
+                    }
+                    result = method.invoke(null, methodArgs);
+                } else {
+                    if (!method.canAccess(obj)) {
+                        method.setAccessible(true);
+                    }
+                    result = method.invoke(obj, methodArgs);
+                }
+            } else {
+                fail("Failed to find method via reflection: " + methodName);
+            }
+        } catch (IllegalArgumentException | IllegalAccessException | SecurityException e) {
+            fail("Failed to get method via reflection. Reason: " + e.getMessage());
+        } catch (InvocationTargetException e) {
+            fail("Failed to invoke method via reflection. Reason: " + e.getMessage());
+        }
+        return expectedType == null ? null : expectedType.cast(result);
     }
 
     public static <T> T getFieldWithReflection(Object obj, String fieldName, Class<T> expectedType) {

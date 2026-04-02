@@ -20,9 +20,6 @@ package org.apache.sling.jcr.contentloader.internal;
 
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import javax.servlet.GenericServlet;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -36,6 +33,9 @@ import java.util.Spliterators;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import jakarta.servlet.GenericServlet;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import org.apache.sling.api.request.ResponseUtil;
 import org.apache.sling.commons.osgi.PropertiesUtil;
 import org.apache.sling.jcr.api.SlingRepository;
@@ -48,7 +48,7 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
 @Component(
-        service = javax.servlet.Servlet.class,
+        service = jakarta.servlet.Servlet.class,
         property = {
             Constants.SERVICE_VENDOR + "=The Apache Software Foundation",
             Constants.SERVICE_DESCRIPTION + "=Apache Sling JCR Content Loader Web Console Plugin",
@@ -162,7 +162,7 @@ public class ContentLoaderWebConsolePlugin extends GenericServlet {
         sb.append("<table class='nicetable nested'><thead>");
         sb.append("<tr><th>Path</th><th>")
                 .append(ResponseUtil.escapeXml(entry.getPath()))
-                .append("</th><tr>");
+                .append("</th></tr>");
         sb.append("</thead><tbody>");
         printPathEntryTableRow(sb, "Target Path", ResponseUtil.escapeXml(entry.getTarget()), row++);
         // most important directives
@@ -195,11 +195,8 @@ public class ContentLoaderWebConsolePlugin extends GenericServlet {
     private URL getResource(final String path) {
         if (path.startsWith("/" + RES_LOC)) {
             // strip label
-            int index = path.indexOf('/', 1);
-            if (index <= 0) {
-                throw new IllegalStateException("The relativeResourcePrefix must contain at least one '/'");
-            }
-            return this.getClass().getResource(path.substring(index));
+            String resPath = path.substring(LABEL.length() + 1);
+            return this.getClass().getResource(resPath);
         }
         return null;
     }
