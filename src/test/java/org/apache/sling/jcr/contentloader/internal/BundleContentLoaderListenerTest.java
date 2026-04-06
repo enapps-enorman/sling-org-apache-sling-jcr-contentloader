@@ -35,10 +35,11 @@ import org.apache.sling.jcr.contentloader.internal.readers.XmlReader;
 import org.apache.sling.jcr.contentloader.internal.readers.ZipReader;
 import org.apache.sling.testing.mock.osgi.MockBundle;
 import org.apache.sling.testing.mock.sling.ResourceResolverType;
-import org.apache.sling.testing.mock.sling.junit.SlingContext;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.apache.sling.testing.mock.sling.junit5.SlingContext;
+import org.apache.sling.testing.mock.sling.junit5.SlingContextExtension;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleEvent;
 
@@ -48,23 +49,23 @@ import static org.apache.sling.jcr.contentloader.internal.BundleContentLoaderLis
 import static org.apache.sling.jcr.contentloader.internal.BundleContentLoaderListener.PROPERTY_UNINSTALL_PATHS;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class BundleContentLoaderListenerTest {
+@ExtendWith(SlingContextExtension.class)
+class BundleContentLoaderListenerTest {
 
-    @Rule
     public final SlingContext context = new SlingContext(ResourceResolverType.JCR_OAK);
 
     private BundleContentLoaderListener underTest;
     private BundleContentLoader contentLoader;
     private Session session;
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         // prepare content readers
         context.registerInjectActivateService(JsonReader.class);
         context.registerInjectActivateService(OrderedJsonReader.class);
@@ -87,7 +88,7 @@ public class BundleContentLoaderListenerTest {
     // And more affects BundleContentLoader than BundleContentLoaderListener
 
     @Test
-    public void testBundleResolvedBundleChanged() {
+    void testBundleResolvedBundleChanged() {
         final Bundle bundle = createNewBundle();
         @SuppressWarnings("unchecked")
         final List<Bundle> delayedBundles =
@@ -113,7 +114,7 @@ public class BundleContentLoaderListenerTest {
     // -------BundleContentLoaderListener#bundleChanged(BundleEvent)-------//
 
     @Test
-    public void getContentInfoFromLockedNode() throws RepositoryException {
+    void getContentInfoFromLockedNode() throws RepositoryException {
         final Bundle bundle = createNewBundle();
         final Node bcNode = (Node) session.getItem(BundleContentLoaderListener.BUNDLE_CONTENT_NODE);
         bcNode.addNode(bundle.getSymbolicName()).addMixin("mix:lockable");
@@ -130,7 +131,7 @@ public class BundleContentLoaderListenerTest {
     }
 
     @Test
-    public void getContentInfoFromNotLockableNode() throws RepositoryException {
+    void getContentInfoFromNotLockableNode() throws RepositoryException {
         final Bundle bundle = createNewBundle();
         final Node bcNode = (Node) session.getItem(BundleContentLoaderListener.BUNDLE_CONTENT_NODE);
         bcNode.addNode(bundle.getSymbolicName()); // Node without lockable mixin
@@ -140,7 +141,7 @@ public class BundleContentLoaderListenerTest {
     }
 
     @Test
-    public void getContentInfo() throws RepositoryException {
+    void getContentInfo() throws RepositoryException {
         final Bundle bundle = createNewBundle();
         final Node bcNode = (Node) session.getItem(BundleContentLoaderListener.BUNDLE_CONTENT_NODE);
         final Node bundleContent = bcNode.addNode(bundle.getSymbolicName());
@@ -166,7 +167,7 @@ public class BundleContentLoaderListenerTest {
     // -------BundleContentLoaderListener#contentIsUninstalled(Session, Bundle)-------//
 
     @Test
-    public void testContentIsUninstalled() throws RepositoryException {
+    void testContentIsUninstalled() throws RepositoryException {
         final Bundle bundle = createNewBundle();
         final Node bcNode = session.getNode(BUNDLE_CONTENT_NODE).addNode(bundle.getSymbolicName());
 
@@ -181,14 +182,14 @@ public class BundleContentLoaderListenerTest {
     // -------BundleContentLoaderListener#getMimeType(String)-------//
 
     @Test
-    public void testMimeTypeService() {
+    void testMimeTypeService() {
         assertEquals("audio/mpeg", underTest.getMimeType("test.mp3"));
     }
 
     // -------BundleContentLoaderListener#getMimeType(String)-------//
 
     @Test
-    public void getSessionForWorkspace() throws RepositoryException {
+    void getSessionForWorkspace() throws RepositoryException {
         assertNotNull(underTest.getSession(null));
     }
 

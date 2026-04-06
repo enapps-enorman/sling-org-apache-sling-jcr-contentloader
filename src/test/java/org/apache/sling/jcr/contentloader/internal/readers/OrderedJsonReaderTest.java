@@ -18,8 +18,8 @@
  */
 package org.apache.sling.jcr.contentloader.internal.readers;
 
-import org.apache.sling.jcr.contentloader.internal.JsonReaderTest;
 import org.jmock.Expectations;
+import org.junit.jupiter.api.Test;
 
 /**
  * testing specific ordered json import case:
@@ -33,7 +33,7 @@ public class OrderedJsonReaderTest extends JsonReaderTest {
         this.jsonReader = new OrderedJsonReader();
     }
 
-    @org.junit.Test
+    @Test
     public void testTwoOrderedChildren() throws Exception {
         String json = "{ " + " \"SLING:ordered\" : ["
                 + "{ \"SLING:name\": \"c1\"},"

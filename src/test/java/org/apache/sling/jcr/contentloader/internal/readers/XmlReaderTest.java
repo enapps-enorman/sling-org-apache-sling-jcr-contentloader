@@ -28,12 +28,17 @@ import java.net.URL;
 import java.util.Date;
 import java.util.Map;
 
-import junit.framework.TestCase;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
-public class XmlReaderTest extends TestCase {
+class XmlReaderTest {
 
     private XmlReader reader;
     private MockContentCreator creator;
@@ -41,40 +46,43 @@ public class XmlReaderTest extends TestCase {
     /**
      * Test the XmlReader with an XSLT transform.
      */
-    public void testXmlReader() throws Exception {
+    @Test
+    void testXmlReader() throws Exception {
         File file = new File("src/test/resources/reader/sample.xml");
         final URL testdata = file.toURI().toURL();
         reader.parse(testdata, creator);
-        assertEquals("Did not create expected number of nodes", 1, creator.size());
+        assertEquals(1, creator.size(), "Did not create expected number of nodes");
     }
 
     /**
      * Test inclusion of binary files.
      */
-    public void testCreateFile() throws Exception {
+    @Test
+    void testCreateFile() throws Exception {
         File input = new File("src/test/resources/reader/filesample.xml");
         final URL testdata = input.toURI().toURL();
         reader.parse(testdata, creator);
-        assertEquals("Did not create expected number of files", 2, creator.filesCreated.size());
+        assertEquals(2, creator.filesCreated.size(), "Did not create expected number of files");
         MockContentCreator.FileDescription file = creator.filesCreated.get(0);
         try {
             file.data.available();
-            TestCase.fail("Did not close inputstream");
+            fail("Did not close inputstream");
         } catch (IOException ignore) {
             // Expected
         }
-        assertEquals("mimeType mismatch", "application/test", file.mimeType);
+        assertEquals("application/test", file.mimeType, "mimeType mismatch");
         assertEquals(
-                "lastModified mismatch",
                 XmlReader.FileDescription.createDateFormat().parse("1977-06-01T07:00:00+0100"),
-                new Date(file.lastModified));
-        assertEquals("Could not read file", "This is a test file.", file.content);
+                new Date(file.lastModified),
+                "lastModified mismatch");
+        assertEquals("This is a test file.", file.content, "Could not read file");
     }
 
     /**
      * Test the properties and types were processed
      */
-    public void testCreateTypesAndProperties() throws Exception {
+    @Test
+    void testCreateTypesAndProperties() throws Exception {
         File input = new File("src/test/resources/reader/filesample.xml");
         final URL testdata = input.toURI().toURL();
         reader.parse(testdata, creator);
@@ -93,31 +101,30 @@ public class XmlReaderTest extends TestCase {
         assertNull(propsMap.get("multiPropName2"));
     }
 
-    public void testCreateFileWithNullLocation() throws Exception {
+    @Test
+    void testCreateFileWithNullLocation() throws Exception {
         File input = new File("src/test/resources/reader/filesample.xml");
-        final FileInputStream ins = new FileInputStream(input);
-        try {
+        try (final FileInputStream ins = new FileInputStream(input)) {
             reader.parse(ins, creator);
-            assertEquals("Created files when we shouldn't have", 0, creator.filesCreated.size());
-        } finally {
-            ins.close();
+            assertEquals(0, creator.filesCreated.size(), "Created files when we shouldn't have");
         }
     }
 
-    public void testUseOSLastModified() throws RepositoryException, IOException {
+    @Test
+    void testUseOSLastModified() throws RepositoryException, IOException {
         File input = new File("src/test/resources/reader/datefallbacksample.xml");
         final URL testdata = input.toURI().toURL();
         reader.parse(testdata, creator);
         File file = new File("src/test/resources/reader/testfile.txt");
         long originalLastModified = file.lastModified();
-        assertEquals("Did not create expected number of files", 1, creator.filesCreated.size());
+        assertEquals(1, creator.filesCreated.size(), "Did not create expected number of files");
         MockContentCreator.FileDescription fileDescription = creator.filesCreated.get(0);
         assertEquals(
-                "Did not pick up last modified date from file", originalLastModified, fileDescription.lastModified);
+                originalLastModified, fileDescription.lastModified, "Did not pick up last modified date from file");
     }
 
-    protected void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    void setUp() {
         reader = new XmlReader();
         reader.activate();
         creator = new MockContentCreator();
@@ -130,43 +137,50 @@ public class XmlReaderTest extends TestCase {
         }
     }
 
-    public void testMalformedXmlUnexpectedPropertyElement() throws Exception {
+    @Test
+    void testMalformedXmlUnexpectedPropertyElement() throws Exception {
         malformedXmlTest(
                 "<property/>",
                 "XML file does not seem to contain valid content xml. Expected name element for property in : null");
     }
 
-    public void testMalformedXmlUnexpectedNameElement() throws Exception {
+    @Test
+    void testMalformedXmlUnexpectedNameElement() throws Exception {
         malformedXmlTest(
                 "<name></name>",
                 "XML file does not seem to contain valid content xml. Unexpected name element in : null");
     }
 
-    public void testMalformedXmlUnexpectedValueElement() throws Exception {
+    @Test
+    void testMalformedXmlUnexpectedValueElement() throws Exception {
         malformedXmlTest(
                 "<value></value>",
                 "XML file does not seem to contain valid content xml. Unexpected value element in : null");
     }
 
-    public void testMalformedXmlUnexpectedValuesElement() throws Exception {
+    @Test
+    void testMalformedXmlUnexpectedValuesElement() throws Exception {
         malformedXmlTest(
                 "<values></values>",
                 "XML file does not seem to contain valid content xml. Unexpected values element in : null");
     }
 
-    public void testMalformedXmlUnexpectedTypeElement() throws Exception {
+    @Test
+    void testMalformedXmlUnexpectedTypeElement() throws Exception {
         malformedXmlTest(
                 "<type></type>",
                 "XML file does not seem to contain valid content xml. Unexpected type element in : null");
     }
 
-    public void testMalformedXmlUnexpectedPrimaryNodeTypeElement() throws Exception {
+    @Test
+    void testMalformedXmlUnexpectedPrimaryNodeTypeElement() throws Exception {
         malformedXmlTest(
                 "<primaryNodeType></primaryNodeType>",
                 "Element is not allowed at this location: primaryNodeType in null");
     }
 
-    public void testMalformedXmlUnexpectedMixinNodeTypeElement() throws Exception {
+    @Test
+    void testMalformedXmlUnexpectedMixinNodeTypeElement() throws Exception {
         malformedXmlTest(
                 "<mixinNodeType></mixinNodeType>", "Element is not allowed at this location: mixinNodeType in null");
     }

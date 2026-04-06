@@ -30,35 +30,36 @@ import java.util.Map;
 
 import org.apache.sling.jcr.contentloader.PathEntry;
 import org.apache.sling.testing.mock.sling.ResourceResolverType;
-import org.apache.sling.testing.mock.sling.junit.SlingContext;
+import org.apache.sling.testing.mock.sling.junit5.SlingContext;
+import org.apache.sling.testing.mock.sling.junit5.SlingContextExtension;
 import org.apache.sling.testing.mock.sling.servlet.MockSlingJakartaHttpServletRequest;
 import org.apache.sling.testing.mock.sling.servlet.MockSlingJakartaHttpServletResponse;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.osgi.framework.Bundle;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
 /**
  *
  */
-public class ContentLoaderWebConsolePluginTest {
+@ExtendWith(SlingContextExtension.class)
+class ContentLoaderWebConsolePluginTest {
 
-    @Rule
     public final SlingContext context = new SlingContext(ResourceResolverType.JCR_MOCK);
 
     private ContentLoaderWebConsolePlugin plugin;
     private BundleHelper mockBundleHelper;
 
-    @Before
-    public void beforeEach() {
+    @BeforeEach
+    void beforeEach() {
         mockBundleHelper = context.registerService(BundleHelper.class, Mockito.mock(BundleHelper.class));
 
         plugin = context.registerInjectActivateService(ContentLoaderWebConsolePlugin.class);
@@ -71,7 +72,7 @@ public class ContentLoaderWebConsolePluginTest {
      * Test method for {@link org.apache.sling.jcr.contentloader.internal.ContentLoaderWebConsolePlugin#service(jakarta.servlet.ServletRequest, jakarta.servlet.ServletResponse)}.
      */
     @Test
-    public void testService() throws IOException, RepositoryException {
+    void testService() throws IOException, RepositoryException {
         // simulate deployed bundles
         plugin.context = Mockito.spy(plugin.context);
         Bundle mockBundle1 = mockBundle(1, "test.bundle1", Map.of());
@@ -122,7 +123,7 @@ public class ContentLoaderWebConsolePluginTest {
     }
 
     @Test
-    public void testServiceWithRepositoryException() throws IOException, RepositoryException {
+    void testServiceWithRepositoryException() throws IOException, RepositoryException {
         // simulate exception thrown during login
         plugin.repository = Mockito.spy(plugin.repository);
         Mockito.doThrow(RepositoryException.class).when(plugin.repository).loginService(null, null);
@@ -132,7 +133,7 @@ public class ContentLoaderWebConsolePluginTest {
         plugin.service(req, resp);
         final String outputAsString = resp.getOutputAsString();
         assertTrue(
-                "Expected logged error message", outputAsString.contains("Error accessing the underlying repository"));
+                outputAsString.contains("Error accessing the underlying repository"), "Expected logged error message");
     }
 
     /**
@@ -140,7 +141,7 @@ public class ContentLoaderWebConsolePluginTest {
      * org.apache.sling.jcr.contentloader.internal.ContentLoaderWebConsolePlugin#getResource(java.lang.String)}.
      */
     @Test
-    public void testGetResource() throws SecurityException, IllegalArgumentException {
+    void testGetResource() throws SecurityException, IllegalArgumentException {
         final URL value1 = ReflectionTools.invokeMethodWithReflection(
                 plugin, "getResource", new Class[] {String.class}, URL.class, new Object[] {"/invalid"});
         assertNull(value1);

@@ -26,19 +26,21 @@ import java.util.UUID;
 
 import org.apache.sling.jcr.contentloader.ContentReader;
 import org.apache.sling.testing.mock.sling.ResourceResolverType;
-import org.apache.sling.testing.mock.sling.junit.SlingContext;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.apache.sling.testing.mock.sling.junit5.SlingContext;
+import org.apache.sling.testing.mock.sling.junit5.SlingContextExtension;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.apache.sling.jcr.contentloader.ImportOptionsFactory.AUTO_CHECKOUT;
 import static org.apache.sling.jcr.contentloader.ImportOptionsFactory.OVERWRITE_NODE;
 import static org.apache.sling.jcr.contentloader.ImportOptionsFactory.OVERWRITE_PROPERTIES;
 import static org.apache.sling.jcr.contentloader.ImportOptionsFactory.createImportOptions;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** TODO might need to consolidate this with DefaultContentCreatorTest */
+@ExtendWith(SlingContextExtension.class)
 public class CreateNodeTest {
 
     private DefaultContentCreator contentCreator;
@@ -47,15 +49,14 @@ public class CreateNodeTest {
     private static final String DEFAULT_NAME = "default-name";
     public static final String MIX_VERSIONABLE = "mix:versionable";
 
-    @Rule
     public final SlingContext context = new SlingContext(ResourceResolverType.JCR_OAK);
 
     private final String uniqueId() {
         return getClass().getSimpleName() + UUID.randomUUID();
     }
 
-    @Before
-    public void setup() throws Exception {
+    @BeforeEach
+    void setup() throws Exception {
         session = context.resourceResolver().adaptTo(Session.class);
         contentCreator = new DefaultContentCreator(null);
         contentCreator.init(
@@ -67,11 +68,11 @@ public class CreateNodeTest {
     }
 
     @Test
-    public void testCreateNode() throws Exception {
+    void testCreateNode() throws Exception {
         contentCreator.prepareParsing(testRoot, DEFAULT_NAME);
         final String name = uniqueId();
-        assertFalse("Expecting " + name + " child node to be absent before test", testRoot.hasNode(name));
+        assertFalse(testRoot.hasNode(name), "Expecting " + name + " child node to be absent before test");
         contentCreator.createNode(name, null, null);
-        assertTrue("Expecting " + name + " child node to be created", testRoot.hasNode(name));
+        assertTrue(testRoot.hasNode(name), "Expecting " + name + " child node to be created");
     }
 }

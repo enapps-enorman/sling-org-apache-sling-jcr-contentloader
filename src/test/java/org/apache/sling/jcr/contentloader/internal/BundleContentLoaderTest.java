@@ -18,8 +18,6 @@
  */
 package org.apache.sling.jcr.contentloader.internal;
 
-import javax.jcr.AccessDeniedException;
-import javax.jcr.NamespaceException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Workspace;
@@ -47,12 +45,13 @@ import org.apache.sling.jcr.contentloader.internal.readers.XmlReader;
 import org.apache.sling.jcr.contentloader.internal.readers.ZipReader;
 import org.apache.sling.testing.mock.osgi.MockBundle;
 import org.apache.sling.testing.mock.sling.ResourceResolverType;
-import org.apache.sling.testing.mock.sling.junit.SlingContext;
+import org.apache.sling.testing.mock.sling.junit5.SlingContext;
+import org.apache.sling.testing.mock.sling.junit5.SlingContextExtension;
 import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.osgi.framework.Bundle;
 
@@ -61,13 +60,13 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@ExtendWith(SlingContextExtension.class)
 public class BundleContentLoaderTest {
 
-    @Rule
     public final SlingContext context = new SlingContext(ResourceResolverType.JCR_OAK);
 
     private BundleContentLoaderListener bundleHelper;
@@ -76,8 +75,8 @@ public class BundleContentLoaderTest {
 
     private static final String CUSTOM_PRIVILEGE_NAME = "customPrivilege";
 
-    @Before
-    public void prepareContentLoader() throws Exception {
+    @BeforeEach
+    void prepareContentLoader() {
         // prepare content readers
         context.registerInjectActivateService(JsonReader.class);
         context.registerInjectActivateService(OrderedJsonReader.class);
@@ -93,8 +92,7 @@ public class BundleContentLoaderTest {
         whiteboard = context.getService(ContentReaderWhiteboard.class);
     }
 
-    private static Privilege getOrRegisterCustomPrivilege(Session session)
-            throws AccessDeniedException, NamespaceException, RepositoryException {
+    private static Privilege getOrRegisterCustomPrivilege(Session session) throws RepositoryException {
         // register custom privilege
         Workspace wsp = session.getWorkspace();
         if (!(wsp instanceof JackrabbitWorkspace)) {
@@ -142,29 +140,29 @@ public class BundleContentLoaderTest {
     }
 
     @Test
-    public void loadContentOverwriteWithoutPath() throws Exception {
+    void loadContentOverwriteWithoutPath() throws Exception {
         AccessControlEntry[] expectedAces = createFolderNodeAndACL("/apps/child");
         BundleContentLoader contentLoader = new BundleContentLoader(bundleHelper, whiteboard, null);
         Bundle mockBundle = newBundleWithInitialContent(context, "SLING-INF2;overwrite:=true");
         contentLoader.registerBundle(context.resourceResolver().adaptTo(Session.class), mockBundle, false);
         Resource imported = context.resourceResolver().getResource("/apps/sling/validation/content");
-        assertNull("Resource was unexpectedly imported", imported);
+        assertNull(imported, "Resource was unexpectedly imported");
         assertFolderNodeAndACL("/apps/child", expectedAces);
     }
 
     @Test
-    public void loadContentOverwriteWithRootPath() throws Exception {
+    void loadContentOverwriteWithRootPath() throws Exception {
         AccessControlEntry[] expectedAces = createFolderNodeAndACL("/apps/child");
         BundleContentLoader contentLoader = new BundleContentLoader(bundleHelper, whiteboard, null);
         Bundle mockBundle = newBundleWithInitialContent(context, "SLING-INF2;overwrite:=true;path:=/");
         contentLoader.registerBundle(context.resourceResolver().adaptTo(Session.class), mockBundle, false);
         Resource imported = context.resourceResolver().getResource("/apps/sling/validation/content");
-        assertNull("Resource was unexpectedly imported", imported);
+        assertNull(imported, "Resource was unexpectedly imported");
         assertFolderNodeAndACL("/apps/child", expectedAces);
     }
 
     @Test
-    public void loadContentOverwriteWith2ndLevelPath() throws Exception {
+    void loadContentOverwriteWith2ndLevelPath() throws Exception {
         /*AccessControlEntry[] expectedAces =*/ createFolderNodeAndACL("/apps/child");
         BundleContentLoader contentLoader = new BundleContentLoader(bundleHelper, whiteboard, null);
         Bundle mockBundle = newBundleWithInitialContent(context, "SLING-INF2/apps;overwrite:=true;path:=/apps");
@@ -177,7 +175,7 @@ public class BundleContentLoaderTest {
     }
 
     @Test
-    public void loadContentWithSpecificPath() throws Exception {
+    void loadContentWithSpecificPath() {
 
         BundleContentLoader contentLoader = new BundleContentLoader(bundleHelper, whiteboard, null);
 
@@ -192,7 +190,7 @@ public class BundleContentLoaderTest {
     }
 
     @Test
-    public void loadContentFromFilePathEntry() throws Exception {
+    void loadContentFromFilePathEntry() {
 
         BundleContentLoader contentLoader = new BundleContentLoader(bundleHelper, whiteboard, null);
 
@@ -208,7 +206,7 @@ public class BundleContentLoaderTest {
     }
 
     @Test
-    public void loadContentWithExcludes() throws Exception {
+    void loadContentWithExcludes() {
 
         BundleContentLoader contentLoader =
                 new BundleContentLoader(bundleHelper, whiteboard, new BundleContentLoaderConfiguration() {
@@ -237,7 +235,7 @@ public class BundleContentLoaderTest {
     }
 
     @Test
-    public void loadContentWithNullValue() throws Exception {
+    void loadContentWithNullValue() {
 
         BundleContentLoader contentLoader =
                 new BundleContentLoader(bundleHelper, whiteboard, new BundleContentLoaderConfiguration() {
@@ -266,7 +264,7 @@ public class BundleContentLoaderTest {
     }
 
     @Test
-    public void loadContentWithIncludes() throws Exception {
+    void loadContentWithIncludes() {
 
         BundleContentLoader contentLoader =
                 new BundleContentLoader(bundleHelper, whiteboard, new BundleContentLoaderConfiguration() {
@@ -295,7 +293,7 @@ public class BundleContentLoaderTest {
     }
 
     @Test
-    public void loadContentWithRootPath() throws Exception {
+    void loadContentWithRootPath() {
 
         BundleContentLoader contentLoader = new BundleContentLoader(bundleHelper, whiteboard, null);
 
@@ -310,8 +308,8 @@ public class BundleContentLoaderTest {
     }
 
     @Test
-    @Ignore("TODO - unregister or somehow ignore the XmlReader component for this test")
-    public void loadXmlAsIs() throws Exception {
+    @Disabled("TODO - unregister or somehow ignore the XmlReader component for this test")
+    void loadXmlAsIs() {
 
         BundleContentLoader contentLoader = new BundleContentLoader(bundleHelper, whiteboard, null);
 
@@ -335,7 +333,7 @@ public class BundleContentLoaderTest {
     }
 
     @Test
-    public void testDescriptorGetSetUrl() throws Exception {
+    void testDescriptorGetSetUrl() {
         BundleContentLoader.Descriptor desc = new BundleContentLoader.Descriptor();
 
         assertNull(desc.getUrl());
@@ -345,7 +343,7 @@ public class BundleContentLoaderTest {
     }
 
     @Test
-    public void testDescriptorGetSetContentReader() throws Exception {
+    void testDescriptorGetSetContentReader() {
         BundleContentLoader.Descriptor desc = new BundleContentLoader.Descriptor();
 
         assertNull(desc.getContentReader());
@@ -372,7 +370,7 @@ public class BundleContentLoaderTest {
             format.append("  ");
         }
         format.append("%s [%s]%n");
-        String name = resource.getName().length() == 0 ? "/" : resource.getName();
+        String name = resource.getName().isEmpty() ? "/" : resource.getName();
         System.out.format(format.toString(), name, resource.getResourceType());
         currentDepth++;
         if (currentDepth > maxDepth) {

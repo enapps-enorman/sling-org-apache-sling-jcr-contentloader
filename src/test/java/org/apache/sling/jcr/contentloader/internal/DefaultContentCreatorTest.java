@@ -47,13 +47,14 @@ import org.apache.sling.jcr.contentloader.ContentReader;
 import org.apache.sling.jcr.contentloader.LocalPrivilege;
 import org.apache.sling.jcr.contentloader.LocalRestriction;
 import org.apache.sling.testing.mock.sling.ResourceResolverType;
-import org.apache.sling.testing.mock.sling.junit.SlingContext;
+import org.apache.sling.testing.mock.sling.junit5.SlingContext;
+import org.apache.sling.testing.mock.sling.junit5.SlingContextExtension;
 import org.jmock.Expectations;
-import org.jmock.Mockery;
-import org.jmock.integration.junit4.JUnit4Mockery;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.jmock.junit5.JUnit5Mockery;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import static org.apache.sling.jcr.contentloader.ImportOptionsFactory.AUTO_CHECKOUT;
 import static org.apache.sling.jcr.contentloader.ImportOptionsFactory.CHECK_IN;
@@ -64,27 +65,30 @@ import static org.apache.sling.jcr.contentloader.ImportOptionsFactory.createImpo
 import static org.apache.sling.jcr.contentloader.LocalRestrictionTest.val;
 import static org.apache.sling.jcr.contentloader.LocalRestrictionTest.vals;
 import static org.apache.sling.jcr.contentloader.it.SLING11713InitialContentIT.assertAce;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class DefaultContentCreatorTest {
+@ExtendWith(SlingContextExtension.class)
+class DefaultContentCreatorTest {
 
     static final String DEFAULT_NAME = "default-name";
-    final Mockery mockery = new JUnit4Mockery();
+
+    @RegisterExtension
+    final JUnit5Mockery mockery = new JUnit5Mockery();
+
     DefaultContentCreator contentCreator;
 
     Session session;
     Node parentNode;
     Property prop;
 
-    @Rule
     public final SlingContext context = new SlingContext(ResourceResolverType.JCR_OAK);
 
-    @Before
-    public void setup() throws Exception {
+    @BeforeEach
+    void setup() throws Exception {
         session = context.resourceResolver().adaptTo(Session.class);
         contentCreator = new DefaultContentCreator(null);
         contentCreator.init(
@@ -96,7 +100,7 @@ public class DefaultContentCreatorTest {
     }
 
     @Test
-    public void willRewriteUndefinedPropertyType() throws RepositoryException {
+    void willRewriteUndefinedPropertyType() throws RepositoryException {
         parentNode = mockery.mock(Node.class);
         prop = mockery.mock(Property.class);
         contentCreator.init(
@@ -121,7 +125,7 @@ public class DefaultContentCreatorTest {
     }
 
     @Test
-    public void willNotRewriteUndefinedPropertyType() throws RepositoryException {
+    void willNotRewriteUndefinedPropertyType() throws RepositoryException {
         parentNode = mockery.mock(Node.class);
         prop = mockery.mock(Property.class);
         contentCreator.init(createImportOptions(AUTO_CHECKOUT), new HashMap<String, ContentReader>(), null, null);
@@ -141,7 +145,7 @@ public class DefaultContentCreatorTest {
     }
 
     @Test
-    public void testDoesNotCreateProperty() throws RepositoryException {
+    void testDoesNotCreateProperty() throws RepositoryException {
         final String propertyName = "foo";
         prop = mockery.mock(Property.class);
         parentNode = mockery.mock(Node.class);
@@ -165,7 +169,7 @@ public class DefaultContentCreatorTest {
     }
 
     @Test
-    public void testCreateReferenceProperty() throws RepositoryException {
+    void testCreateReferenceProperty() throws RepositoryException {
         final String propertyName = "foo";
         final String propertyValue = "bar";
         final String rootNodeName = uniqueId();
@@ -207,7 +211,7 @@ public class DefaultContentCreatorTest {
     }
 
     @Test
-    public void testCreateFalseCheckedOutPreperty() throws RepositoryException {
+    void testCreateFalseCheckedOutPreperty() throws RepositoryException {
         parentNode = mockery.mock(Node.class);
 
         this.mockery.checking(new Expectations() {
@@ -228,7 +232,7 @@ public class DefaultContentCreatorTest {
     }
 
     @Test
-    public void testCreateTrueCheckedOutPreperty() throws RepositoryException {
+    void testCreateTrueCheckedOutPreperty() throws RepositoryException {
         parentNode = mockery.mock(Node.class);
 
         this.mockery.checking(new Expectations() {
@@ -248,7 +252,7 @@ public class DefaultContentCreatorTest {
     }
 
     @Test
-    public void testCreateDateProperty() throws RepositoryException {
+    void testCreateDateProperty() throws RepositoryException {
         final String propertyName = "dateProp";
         final String propertyValue = "2012-10-01T09:45:00.000+02:00";
         final ContentImportListener listener = mockery.mock(ContentImportListener.class);
@@ -275,7 +279,7 @@ public class DefaultContentCreatorTest {
     }
 
     @Test
-    public void testCreatePropertyWithNewPropertyType() throws RepositoryException {
+    void testCreatePropertyWithNewPropertyType() throws RepositoryException {
         final String propertyName = "foo";
         final String propertyValue = "bar";
         final Integer propertyType = -1;
@@ -305,7 +309,7 @@ public class DefaultContentCreatorTest {
     // ----- DefaultContentCreator#createNode(String name, String primaryNodeType, String[] mixinNodeTypes)-------//
 
     @Test
-    public void createNodeWithoutNameAndTwoInStack() throws RepositoryException {
+    void createNodeWithoutNameAndTwoInStack() throws RepositoryException {
         contentCreator.init(
                 createImportOptions(OVERWRITE_NODE | OVERWRITE_PROPERTIES | AUTO_CHECKOUT),
                 new HashMap<String, ContentReader>(),
@@ -322,7 +326,7 @@ public class DefaultContentCreatorTest {
     }
 
     @Test
-    public void createNodeWithoutProvidedNames() throws RepositoryException {
+    void createNodeWithoutProvidedNames() throws RepositoryException {
         @SuppressWarnings("unchecked")
         Deque<Node> nodesStack =
                 (Deque<Node>) ReflectionTools.getFieldWithReflection(contentCreator, "parentNodeStack", Deque.class);
@@ -342,7 +346,7 @@ public class DefaultContentCreatorTest {
     }
 
     @Test
-    public void createNodeWithOverwrite() throws RepositoryException {
+    void createNodeWithOverwrite() throws RepositoryException {
         final String newNodeName = uniqueId();
         final String propertyName = uniqueId();
         final String propertyValue = uniqueId();
@@ -372,7 +376,7 @@ public class DefaultContentCreatorTest {
     }
 
     @Test
-    public void addMixinsToExistingNode() throws RepositoryException {
+    void addMixinsToExistingNode() throws RepositoryException {
         final String newNodeName = uniqueId();
         final String[] mixins = {"mix:versionable"};
         @SuppressWarnings("unchecked")
@@ -391,7 +395,7 @@ public class DefaultContentCreatorTest {
     }
 
     @Test
-    public void createNodeWithPrimaryType() throws RepositoryException {
+    void createNodeWithPrimaryType() throws RepositoryException {
         final String newNodeName = uniqueId();
         final List<String> createdNodes = new ArrayList<String>();
         final ContentImportListener listener = mockery.mock(ContentImportListener.class);
@@ -421,7 +425,7 @@ public class DefaultContentCreatorTest {
     // ----- DefaultContentCreator#createProperty(String name, int propertyType, String[] values)-------//
 
     @Test
-    public void propertyDoesntOverwritten() throws RepositoryException {
+    void propertyDoesntOverwritten() throws RepositoryException {
         final String newPropertyName = uniqueId();
         final String newPropertyValue = uniqueId();
         contentCreator.init(createImportOptions(NO_OPTIONS), new HashMap<String, ContentReader>(), null, null);
@@ -436,7 +440,7 @@ public class DefaultContentCreatorTest {
     }
 
     @Test
-    public void createReferenceProperty() throws RepositoryException {
+    void createReferenceProperty() throws RepositoryException {
         final String propName = uniqueId();
         final String[] propValues = {uniqueId(), uniqueId()};
         final ContentImportListener listener = mockery.mock(ContentImportListener.class);
@@ -464,7 +468,7 @@ public class DefaultContentCreatorTest {
     }
 
     @Test
-    public void createDateProperty() throws RepositoryException {
+    void createDateProperty() throws RepositoryException {
         final String propName = "dateProp";
         final String[] propValues = {"2012-10-01T09:45:00.000+02:00", "2011-02-13T09:45:00.000+02:00"};
         final ContentImportListener listener = mockery.mock(ContentImportListener.class);
@@ -491,7 +495,7 @@ public class DefaultContentCreatorTest {
     }
 
     @Test
-    public void createUndefinedProperty() throws RepositoryException {
+    void createUndefinedProperty() throws RepositoryException {
         final String propName = uniqueId();
         final ContentImportListener listener = mockery.mock(ContentImportListener.class);
 
@@ -511,7 +515,7 @@ public class DefaultContentCreatorTest {
     }
 
     @Test
-    public void createOtherProperty() throws RepositoryException {
+    void createOtherProperty() throws RepositoryException {
         final String propName = uniqueId();
 
         contentCreator.init(createImportOptions(NO_OPTIONS), new HashMap<String, ContentReader>(), null, null);
@@ -525,7 +529,7 @@ public class DefaultContentCreatorTest {
     // ------DefaultContentCreator#finishNode()------//
 
     @Test
-    public void finishNodeWithMultipleProperty() throws RepositoryException {
+    void finishNodeWithMultipleProperty() throws RepositoryException {
         final String propName = uniqueId();
         final String underTestNodeName = uniqueId();
         @SuppressWarnings("unchecked")
@@ -555,7 +559,7 @@ public class DefaultContentCreatorTest {
     }
 
     @Test
-    public void finishNodeWithSingleProperty() throws RepositoryException {
+    void finishNodeWithSingleProperty() throws RepositoryException {
         final String propName = uniqueId();
         final String underTestNodeName = uniqueId();
         final ContentImportListener listener = mockery.mock(ContentImportListener.class);
@@ -581,7 +585,7 @@ public class DefaultContentCreatorTest {
     }
 
     @Test
-    public void finishNodeWithoutProperties() throws RepositoryException {
+    void finishNodeWithoutProperties() throws RepositoryException {
         final String propName = uniqueId();
         final String underTestNodeName = uniqueId();
 
@@ -596,7 +600,7 @@ public class DefaultContentCreatorTest {
     }
 
     @Test
-    public void finishNotReferenceableNode() throws RepositoryException {
+    void finishNotReferenceableNode() throws RepositoryException {
         final String propName = uniqueId();
         final String underTestNodeName = uniqueId();
 
@@ -612,7 +616,7 @@ public class DefaultContentCreatorTest {
     }
 
     @Test
-    public void createAceWithoutRestrictionsSpecified() throws RepositoryException {
+    void createAceWithoutRestrictionsSpecified() throws RepositoryException {
         contentCreator.init(createImportOptions(NO_OPTIONS), new HashMap<String, ContentReader>(), null, null);
         contentCreator.prepareParsing(parentNode, null);
 
@@ -648,7 +652,7 @@ public class DefaultContentCreatorTest {
 
     @Deprecated
     @Test
-    public void createAceWithNonSpecificRestrictions() throws RepositoryException {
+    void createAceWithNonSpecificRestrictions() throws RepositoryException {
         contentCreator.init(createImportOptions(NO_OPTIONS), new HashMap<String, ContentReader>(), null, null);
         contentCreator.prepareParsing(parentNode, null);
 
@@ -691,7 +695,7 @@ public class DefaultContentCreatorTest {
 
     @Deprecated
     @Test
-    public void createAceWithNullSpecificRestrictions() throws RepositoryException {
+    void createAceWithNullSpecificRestrictions() throws RepositoryException {
         contentCreator.init(createImportOptions(NO_OPTIONS), new HashMap<String, ContentReader>(), null, null);
         contentCreator.prepareParsing(parentNode, null);
 
@@ -729,7 +733,7 @@ public class DefaultContentCreatorTest {
     }
 
     @Test
-    public void createAceWithSpecificRestrictions() throws RepositoryException {
+    void createAceWithSpecificRestrictions() throws RepositoryException {
         contentCreator.init(createImportOptions(NO_OPTIONS), new HashMap<String, ContentReader>(), null, null);
         contentCreator.prepareParsing(parentNode, null);
 
@@ -772,7 +776,7 @@ public class DefaultContentCreatorTest {
     }
 
     @Test
-    public void createAceWithSpecificRestrictionsTwice() throws RepositoryException {
+    void createAceWithSpecificRestrictionsTwice() throws RepositoryException {
         contentCreator.init(createImportOptions(NO_OPTIONS), new HashMap<String, ContentReader>(), null, null);
         contentCreator.prepareParsing(parentNode, null);
 
@@ -817,7 +821,7 @@ public class DefaultContentCreatorTest {
     }
 
     @Test
-    public void createAceWithNullPrivileges() throws RepositoryException {
+    void createAceWithNullPrivileges() throws RepositoryException {
         contentCreator.init(createImportOptions(NO_OPTIONS), new HashMap<String, ContentReader>(), null, null);
         contentCreator.prepareParsing(parentNode, null);
 
@@ -835,7 +839,7 @@ public class DefaultContentCreatorTest {
     }
 
     @Test
-    public void createAceWithNullPrincipal() throws RepositoryException {
+    void createAceWithNullPrincipal() throws RepositoryException {
         contentCreator.init(createImportOptions(NO_OPTIONS), new HashMap<String, ContentReader>(), null, null);
         contentCreator.prepareParsing(parentNode, null);
 
@@ -843,13 +847,16 @@ public class DefaultContentCreatorTest {
         contentCreator.createUser(userName, "Test", null);
 
         // try null principal
-        assertThrows("No principal found for id: null", RepositoryException.class, () -> {
-            contentCreator.createAce(
-                    null,
-                    new String[] {PrivilegeConstants.JCR_READ},
-                    new String[] {PrivilegeConstants.JCR_WRITE},
-                    null);
-        });
+        assertThrows(
+                RepositoryException.class,
+                () -> {
+                    contentCreator.createAce(
+                            null,
+                            new String[] {PrivilegeConstants.JCR_READ},
+                            new String[] {PrivilegeConstants.JCR_WRITE},
+                            null);
+                },
+                "No principal found for id: null");
 
         contentCreator.finishNode();
 
@@ -859,20 +866,23 @@ public class DefaultContentCreatorTest {
     }
 
     @Test
-    public void createAceWithInvalidPrincipal() throws RepositoryException {
+    void createAceWithInvalidPrincipal() throws RepositoryException {
         contentCreator.init(createImportOptions(NO_OPTIONS), new HashMap<String, ContentReader>(), null, null);
         contentCreator.prepareParsing(parentNode, null);
 
         final String userName = uniqueId();
 
         // try non-existing principal
-        assertThrows(String.format("No principal found for id: %s", userName), RepositoryException.class, () -> {
-            contentCreator.createAce(
-                    userName,
-                    new String[] {PrivilegeConstants.JCR_READ},
-                    new String[] {PrivilegeConstants.JCR_WRITE},
-                    null);
-        });
+        assertThrows(
+                RepositoryException.class,
+                () -> {
+                    contentCreator.createAce(
+                            userName,
+                            new String[] {PrivilegeConstants.JCR_READ},
+                            new String[] {PrivilegeConstants.JCR_WRITE},
+                            null);
+                },
+                String.format("No principal found for id: %s", userName));
 
         contentCreator.finishNode();
 
@@ -882,7 +892,7 @@ public class DefaultContentCreatorTest {
     }
 
     @Test
-    public void createAceWithOrderByNull() throws RepositoryException {
+    void createAceWithOrderByNull() throws RepositoryException {
         createAceWithOrderBy(null);
     }
 
@@ -947,12 +957,12 @@ public class DefaultContentCreatorTest {
     }
 
     @Test
-    public void createAceWithOrderByEmpty() throws RepositoryException {
+    void createAceWithOrderByEmpty() throws RepositoryException {
         createAceWithOrderBy("");
     }
 
     @Test
-    public void createAceWithOrderByFirst() throws RepositoryException {
+    void createAceWithOrderByFirst() throws RepositoryException {
         contentCreator.init(createImportOptions(NO_OPTIONS), new HashMap<String, ContentReader>(), null, null);
         contentCreator.prepareParsing(parentNode, null);
 
@@ -1013,12 +1023,12 @@ public class DefaultContentCreatorTest {
     }
 
     @Test
-    public void createAceWithOrderByLast() throws RepositoryException {
+    void createAceWithOrderByLast() throws RepositoryException {
         createAceWithOrderBy("last");
     }
 
     @Test
-    public void createAceWithOrderByAfter() throws RepositoryException {
+    void createAceWithOrderByAfter() throws RepositoryException {
         contentCreator.init(createImportOptions(NO_OPTIONS), new HashMap<String, ContentReader>(), null, null);
         contentCreator.prepareParsing(parentNode, null);
 
@@ -1097,7 +1107,7 @@ public class DefaultContentCreatorTest {
     }
 
     @Test
-    public void createAceWithOrderByBefore() throws RepositoryException {
+    void createAceWithOrderByBefore() throws RepositoryException {
         contentCreator.init(createImportOptions(NO_OPTIONS), new HashMap<String, ContentReader>(), null, null);
         contentCreator.prepareParsing(parentNode, null);
 
@@ -1158,7 +1168,7 @@ public class DefaultContentCreatorTest {
     }
 
     @Test
-    public void createAceWithOrderByAfterInvalid() throws RepositoryException {
+    void createAceWithOrderByAfterInvalid() throws RepositoryException {
         contentCreator.init(createImportOptions(NO_OPTIONS), new HashMap<String, ContentReader>(), null, null);
         contentCreator.prepareParsing(parentNode, null);
 
@@ -1177,9 +1187,12 @@ public class DefaultContentCreatorTest {
                 AccessControlConstants.REP_ITEM_NAMES,
                 vals(session.getValueFactory(), PropertyType.NAME, "name1", "name2"))));
         list.add(writeLp);
-        assertThrows("No ACE was found for the specified principal: invalid", IllegalArgumentException.class, () -> {
-            contentCreator.createAce(userName, list, "after invalid");
-        });
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> {
+                    contentCreator.createAce(userName, list, "after invalid");
+                },
+                "No ACE was found for the specified principal: invalid");
 
         contentCreator.finishNode();
 
@@ -1189,7 +1202,7 @@ public class DefaultContentCreatorTest {
     }
 
     @Test
-    public void createAceWithOrderByBeforeInvalid() throws RepositoryException {
+    void createAceWithOrderByBeforeInvalid() throws RepositoryException {
         contentCreator.init(createImportOptions(NO_OPTIONS), new HashMap<String, ContentReader>(), null, null);
         contentCreator.prepareParsing(parentNode, null);
 
@@ -1208,9 +1221,12 @@ public class DefaultContentCreatorTest {
                 AccessControlConstants.REP_ITEM_NAMES,
                 vals(session.getValueFactory(), PropertyType.NAME, "name1", "name2"))));
         list.add(writeLp);
-        assertThrows("No ACE was found for the specified principal: invalid", IllegalArgumentException.class, () -> {
-            contentCreator.createAce(userName, list, "before invalid");
-        });
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> {
+                    contentCreator.createAce(userName, list, "before invalid");
+                },
+                "No ACE was found for the specified principal: invalid");
 
         contentCreator.finishNode();
 
@@ -1220,7 +1236,7 @@ public class DefaultContentCreatorTest {
     }
 
     @Test
-    public void createAceWithOrderByIndex() throws RepositoryException {
+    void createAceWithOrderByIndex() throws RepositoryException {
         contentCreator.init(createImportOptions(NO_OPTIONS), new HashMap<String, ContentReader>(), null, null);
         contentCreator.prepareParsing(parentNode, null);
 
@@ -1299,7 +1315,7 @@ public class DefaultContentCreatorTest {
     }
 
     @Test
-    public void createAceWithOrderByInvalid() throws RepositoryException {
+    void createAceWithOrderByInvalid() throws RepositoryException {
         contentCreator.init(createImportOptions(NO_OPTIONS), new HashMap<String, ContentReader>(), null, null);
         contentCreator.prepareParsing(parentNode, null);
 
@@ -1318,15 +1334,18 @@ public class DefaultContentCreatorTest {
                 AccessControlConstants.REP_ITEM_NAMES,
                 vals(session.getValueFactory(), PropertyType.NAME, "name1", "name2"))));
         list.add(writeLp);
-        assertThrows("Illegal value for the order parameter: invalid", IllegalArgumentException.class, () -> {
-            contentCreator.createAce(userName, list, "invalid");
-        });
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> {
+                    contentCreator.createAce(userName, list, "invalid");
+                },
+                "Illegal value for the order parameter: invalid");
 
         contentCreator.finishNode();
     }
 
     @Test
-    public void createAceWithOrderByIndexTooLarge() throws RepositoryException {
+    void createAceWithOrderByIndexTooLarge() throws RepositoryException {
         contentCreator.init(createImportOptions(NO_OPTIONS), new HashMap<String, ContentReader>(), null, null);
         contentCreator.prepareParsing(parentNode, null);
 
@@ -1345,9 +1364,12 @@ public class DefaultContentCreatorTest {
                 AccessControlConstants.REP_ITEM_NAMES,
                 vals(session.getValueFactory(), PropertyType.NAME, "name1", "name2"))));
         list.add(writeLp);
-        assertThrows("Index value is too large: 100", IndexOutOfBoundsException.class, () -> {
-            contentCreator.createAce(userName, list, "100");
-        });
+        assertThrows(
+                IndexOutOfBoundsException.class,
+                () -> {
+                    contentCreator.createAce(userName, list, "100");
+                },
+                "Index value is too large: 100");
 
         contentCreator.finishNode();
     }
