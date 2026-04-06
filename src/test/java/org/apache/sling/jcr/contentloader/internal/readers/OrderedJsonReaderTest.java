@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
  * - should work with all normal json cases,
  * - should work for specific ordered case
  */
-public class OrderedJsonReaderTest extends JsonReaderTest {
+class OrderedJsonReaderTest extends JsonReaderTest {
 
     @Override
     protected void setReader() {
@@ -34,7 +34,7 @@ public class OrderedJsonReaderTest extends JsonReaderTest {
     }
 
     @Test
-    public void testTwoOrderedChildren() throws Exception {
+    void testTwoOrderedChildren() throws Exception {
         String json = "{ " + " \"SLING:ordered\" : ["
                 + "{ \"SLING:name\": \"c1\"},"
                 + "{ \"SLING:name\": \"c2\"}"

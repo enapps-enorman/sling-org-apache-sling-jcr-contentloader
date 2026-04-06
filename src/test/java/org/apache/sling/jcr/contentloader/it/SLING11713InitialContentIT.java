@@ -263,7 +263,7 @@ public class SLING11713InitialContentIT extends ContentloaderTestSupport {
         assertNotNull(storedPrivileges);
         assertEquals(expectedPrivilegeNames.length, storedPrivileges.length);
         Set<String> privilegeNamesSet =
-                Stream.of(storedPrivileges).map(item -> item.getName()).collect(Collectors.toSet());
+                Stream.of(storedPrivileges).map(Privilege::getName).collect(Collectors.toSet());
         for (String pn : expectedPrivilegeNames) {
             assertTrue("Expecting privilege: " + pn, privilegeNamesSet.contains(pn));
         }

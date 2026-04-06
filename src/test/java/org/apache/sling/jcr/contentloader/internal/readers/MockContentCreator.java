@@ -55,8 +55,6 @@ class MockContentCreator extends Stack<Map<String, Object>> implements ContentCr
 
     public List<MockContentCreator.FileDescription> filesCreated = new ArrayList<MockContentCreator.FileDescription>();
 
-    public MockContentCreator() {}
-
     public void createNode(String name, String primaryNodeType, String[] mixinNodeTypes) throws RepositoryException {
         Map<String, Object> map = new HashMap<>();
         map.put("name", name);
@@ -65,7 +63,9 @@ class MockContentCreator extends Stack<Map<String, Object>> implements ContentCr
         this.push(map);
     }
 
-    public void finishNode() throws RepositoryException {}
+    public void finishNode() throws RepositoryException {
+        // intentionally left empty
+    }
 
     protected void recordProperty(String name, Object value) {
         if (!isEmpty()) {
@@ -107,7 +107,9 @@ class MockContentCreator extends Stack<Map<String, Object>> implements ContentCr
     }
 
     public void createAce(String principal, String[] grantedPrivileges, String[] deniedPrivileges, String order)
-            throws RepositoryException {}
+            throws RepositoryException {
+        // intentionally left empty
+    }
 
     /*
      * (non-Javadoc)
@@ -118,6 +120,7 @@ class MockContentCreator extends Stack<Map<String, Object>> implements ContentCr
      * java.util.Map, java.util.Set)
      */
     @Override
+    @Deprecated
     public void createAce(
             String principal,
             String[] grantedPrivileges,
@@ -126,14 +129,22 @@ class MockContentCreator extends Stack<Map<String, Object>> implements ContentCr
             Map<String, Value> restrictions,
             Map<String, Value[]> mvRestrictions,
             Set<String> removedRestrictionNames)
-            throws RepositoryException {}
+            throws RepositoryException {
+        // intentionally left empty
+    }
 
     public void createGroup(String name, String[] members, Map<String, Object> extraProperties)
-            throws RepositoryException {}
+            throws RepositoryException {
+        // intentionally left empty
+    }
 
     public void createUser(String name, String password, Map<String, Object> extraProperties)
-            throws RepositoryException {}
+            throws RepositoryException {
+        // intentionally left empty
+    }
 
     @Override
-    public void finish() throws RepositoryException {}
+    public void finish() throws RepositoryException {
+        // intentionally left empty
+    }
 }

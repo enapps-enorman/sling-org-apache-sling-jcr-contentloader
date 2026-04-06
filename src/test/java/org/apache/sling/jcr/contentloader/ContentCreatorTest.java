@@ -32,18 +32,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * for an old impl that does not provide an implementation
  * for those methods
  */
-public class ContentCreatorTest {
+class ContentCreatorTest {
 
     private ContentCreator contentCreator = new ContentCreatorOldImpl();
 
     @Test
-    public void testCreateAce1() throws RepositoryException {
+    void testCreateAce1() {
         assertThrows(UnsupportedOperationException.class, () -> contentCreator.createAce(null, null, null));
     }
 
     @Deprecated
     @Test
-    public void testCreateAce2() throws RepositoryException {
+    void testCreateAce2() {
         assertThrows(
                 UnsupportedOperationException.class,
                 () -> contentCreator.createAce(null, null, null, null, null, null, null));
