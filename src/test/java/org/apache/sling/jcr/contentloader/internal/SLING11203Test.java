@@ -29,14 +29,18 @@ import org.apache.sling.jcr.contentloader.internal.readers.OrderedJsonReader;
 import org.apache.sling.jcr.contentloader.internal.readers.XmlReader;
 import org.apache.sling.jcr.contentloader.internal.readers.ZipReader;
 import org.apache.sling.testing.mock.sling.ResourceResolverType;
-import org.apache.sling.testing.mock.sling.junit.SlingContext;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TestRule;
-import org.junit.rules.TestWatcher;
-import org.junit.runner.Description;
+import org.apache.sling.testing.mock.sling.junit5.SlingContext;
+import org.apache.sling.testing.mock.sling.junit5.SlingContextExtension;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.osgi.framework.Bundle;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -46,37 +50,20 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Testing content loader waiting for required content reader
  */
-public class SLING11203Test {
+@ExtendWith(SlingContextExtension.class)
+class SLING11203Test {
 
     protected org.slf4j.Logger logger = LoggerFactory.getLogger(getClass());
 
-    @Rule
     public final SlingContext context = new SlingContext(ResourceResolverType.JCR_OAK);
 
     private BundleContentLoaderListener bundleHelper;
 
-    @Rule
-    public TestRule watcher = new TestWatcher() {
+    @RegisterExtension
+    public LoggingTestWatcher watcher = new LoggingTestWatcher(logger);
 
-        /* (non-Javadoc)
-         * @see org.junit.rules.TestWatcher#starting(org.junit.runner.Description)
-         */
-        @Override
-        protected void starting(Description description) {
-            logger.info("Starting test: {}", description.getMethodName());
-        }
-
-        /* (non-Javadoc)
-         * @see org.junit.rules.TestWatcher#finished(org.junit.runner.Description)
-         */
-        @Override
-        protected void finished(Description description) {
-            logger.info("Finished test: {}", description.getMethodName());
-        }
-    };
-
-    @Before
-    public void prepareContentLoader() throws Exception {
+    @BeforeEach
+    void prepareContentLoader() {
         // NOTE: initially only the default set of content readers are registered
         context.registerInjectActivateService(JsonReader.class);
         context.registerInjectActivateService(OrderedJsonReader.class);
@@ -91,7 +78,7 @@ public class SLING11203Test {
     }
 
     @Test
-    public void loadContentWithoutDirectiveExpectedContentReaderRegistered() throws Exception {
+    void loadContentWithoutDirectiveExpectedContentReaderRegistered() throws Exception {
         loadContentWithDirective();
 
         // check node was not added during parsing the file
@@ -107,7 +94,7 @@ public class SLING11203Test {
     }
 
     @Test
-    public void loadContentWithDirectiveExpectedContentReaderRegisteredBeforeBundleLoaded() throws Exception {
+    void loadContentWithDirectiveExpectedContentReaderRegisteredBeforeBundleLoaded() throws Exception {
         // register the content reader that we require before registering the bundle
         registerCustomContentReader();
 
@@ -126,7 +113,7 @@ public class SLING11203Test {
     }
 
     @Test
-    public void loadContentWithDirectiveExpectedContentReaderRegisteredAfterBundleLoaded() throws Exception {
+    void loadContentWithDirectiveExpectedContentReaderRegisteredAfterBundleLoaded() throws Exception {
         loadContentWithDirective();
 
         // check node was not added during parsing the file
@@ -188,6 +175,44 @@ public class SLING11203Test {
         private SLING11203XmlReader() {
             super();
             activate();
+        }
+    }
+
+    /**
+     * Extension to wrap the test run with logging messages
+     */
+    static class LoggingTestWatcher implements AfterEachCallback, BeforeEachCallback {
+        private Logger logger;
+
+        public LoggingTestWatcher(Logger logger) {
+            this.logger = logger;
+        }
+
+        protected String uniqueTestName(ExtensionContext context) {
+            if (context.getRequiredTestMethod().getAnnotation(Test.class) != null) {
+                if (context.getRequiredTestMethod().getAnnotation(DisplayName.class) != null) {
+                    return String.format(
+                            "%s [%s]", context.getRequiredTestMethod().getName(), context.getDisplayName());
+                } else {
+                    return context.getRequiredTestMethod().getName();
+                }
+            } else {
+                return String.format("%s [%s]", context.getRequiredTestMethod().getName(), context.getDisplayName());
+            }
+        }
+
+        @Override
+        public void beforeEach(ExtensionContext context) throws Exception {
+            if (logger.isInfoEnabled()) {
+                logger.info("Starting test: {}", uniqueTestName(context));
+            }
+        }
+
+        @Override
+        public void afterEach(ExtensionContext context) throws Exception {
+            if (logger.isInfoEnabled()) {
+                logger.info("Finished test: {}", uniqueTestName(context));
+            }
         }
     }
 }

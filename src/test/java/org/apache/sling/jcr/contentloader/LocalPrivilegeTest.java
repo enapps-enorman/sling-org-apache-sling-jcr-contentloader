@@ -34,29 +34,30 @@ import org.apache.jackrabbit.oak.spi.security.privilege.PrivilegeConstants;
 import org.apache.jackrabbit.value.ValueFactoryImpl;
 import org.apache.sling.jcr.base.util.AccessControlUtil;
 import org.apache.sling.testing.mock.sling.ResourceResolverType;
-import org.apache.sling.testing.mock.sling.junit.SlingContext;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.apache.sling.testing.mock.sling.junit5.SlingContext;
+import org.apache.sling.testing.mock.sling.junit5.SlingContextExtension;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  *
  */
-public class LocalPrivilegeTest {
+@ExtendWith(SlingContextExtension.class)
+class LocalPrivilegeTest {
 
-    @Rule
     public final SlingContext context = new SlingContext(ResourceResolverType.JCR_OAK);
 
     private AccessControlManager acm;
 
-    @Before
-    public void setup() throws RepositoryException {
+    @BeforeEach
+    void setup() throws RepositoryException {
         Session session = context.resourceResolver().adaptTo(Session.class);
         acm = AccessControlUtil.getAccessControlManager(session);
         context.registerService(new RestrictionProviderImpl());
@@ -74,7 +75,7 @@ public class LocalPrivilegeTest {
      * Test method for {@link org.apache.sling.jcr.contentloader.LocalPrivilege#hashCode()}.
      */
     @Test
-    public void testHashCode() {
+    void testHashCode() {
         LocalPrivilege lp1 = new LocalPrivilege(PrivilegeConstants.JCR_READ);
         LocalPrivilege lp2 = new LocalPrivilege(PrivilegeConstants.JCR_WRITE);
         assertNotEquals(lp1.hashCode(), lp2.hashCode());
@@ -101,7 +102,7 @@ public class LocalPrivilegeTest {
      * @throws RepositoryException
      */
     @Test
-    public void testCheckPrivilege() throws RepositoryException {
+    void testCheckPrivilege() throws RepositoryException {
         LocalPrivilege lp1 = new LocalPrivilege(PrivilegeConstants.JCR_READ);
         lp1.checkPrivilege(acm);
         assertNotNull(lp1.getPrivilege());
@@ -112,7 +113,7 @@ public class LocalPrivilegeTest {
      * @throws RepositoryException
      */
     @Test
-    public void testGetPrivilege() throws RepositoryException {
+    void testGetPrivilege() throws RepositoryException {
         LocalPrivilege lp1 = new LocalPrivilege(PrivilegeConstants.JCR_READ);
         lp1.checkPrivilege(acm);
         assertEquals(priv(PrivilegeConstants.JCR_READ), lp1.getPrivilege());
@@ -122,7 +123,7 @@ public class LocalPrivilegeTest {
      * Test method for {@link org.apache.sling.jcr.contentloader.LocalPrivilege#getName()}.
      */
     @Test
-    public void testGetName() {
+    void testGetName() {
         LocalPrivilege lp1 = new LocalPrivilege(PrivilegeConstants.JCR_READ);
         assertEquals(PrivilegeConstants.JCR_READ, lp1.getName());
     }
@@ -131,7 +132,7 @@ public class LocalPrivilegeTest {
      * Test method for {@link org.apache.sling.jcr.contentloader.LocalPrivilege#isAllow()}.
      */
     @Test
-    public void testIsAllow() {
+    void testIsAllow() {
         LocalPrivilege lp1 = new LocalPrivilege(PrivilegeConstants.JCR_READ);
         assertFalse(lp1.isAllow());
 
@@ -143,7 +144,7 @@ public class LocalPrivilegeTest {
      * Test method for {@link org.apache.sling.jcr.contentloader.LocalPrivilege#isDeny()}.
      */
     @Test
-    public void testIsDeny() {
+    void testIsDeny() {
         LocalPrivilege lp1 = new LocalPrivilege(PrivilegeConstants.JCR_READ);
         assertFalse(lp1.isDeny());
 
@@ -155,7 +156,7 @@ public class LocalPrivilegeTest {
      * Test method for {@link org.apache.sling.jcr.contentloader.LocalPrivilege#setAllow(boolean)}.
      */
     @Test
-    public void testSetAllow() {
+    void testSetAllow() {
         LocalPrivilege lp1 = new LocalPrivilege(PrivilegeConstants.JCR_READ);
         lp1.setAllow(true);
         assertTrue(lp1.isAllow());
@@ -167,7 +168,7 @@ public class LocalPrivilegeTest {
      * Test method for {@link org.apache.sling.jcr.contentloader.LocalPrivilege#setDeny(boolean)}.
      */
     @Test
-    public void testSetDeny() {
+    void testSetDeny() {
         LocalPrivilege lp1 = new LocalPrivilege(PrivilegeConstants.JCR_READ);
         lp1.setDeny(true);
         assertTrue(lp1.isDeny());
@@ -179,7 +180,7 @@ public class LocalPrivilegeTest {
      * Test method for {@link org.apache.sling.jcr.contentloader.LocalPrivilege#getAllowRestrictions()}.
      */
     @Test
-    public void testGetAllowRestrictions() {
+    void testGetAllowRestrictions() {
         LocalPrivilege lp1 = new LocalPrivilege(PrivilegeConstants.JCR_READ);
         Set<LocalRestriction> allowRestrictions = lp1.getAllowRestrictions();
         assertNotNull(allowRestrictions);
@@ -198,7 +199,7 @@ public class LocalPrivilegeTest {
      * Test method for {@link org.apache.sling.jcr.contentloader.LocalPrivilege#setAllowRestrictions(java.util.Set)}.
      */
     @Test
-    public void testSetAllowRestrictions() {
+    void testSetAllowRestrictions() {
         LocalPrivilege lp1 = new LocalPrivilege(PrivilegeConstants.JCR_READ);
         assertTrue(lp1.getAllowRestrictions().isEmpty());
 
@@ -212,7 +213,7 @@ public class LocalPrivilegeTest {
      * Test method for {@link org.apache.sling.jcr.contentloader.LocalPrivilege#getDenyRestrictions()}.
      */
     @Test
-    public void testGetDenyRestrictions() {
+    void testGetDenyRestrictions() {
         LocalPrivilege lp1 = new LocalPrivilege(PrivilegeConstants.JCR_READ);
         Set<LocalRestriction> denyRestrictions = lp1.getDenyRestrictions();
         assertNotNull(denyRestrictions);
@@ -231,7 +232,7 @@ public class LocalPrivilegeTest {
      * Test method for {@link org.apache.sling.jcr.contentloader.LocalPrivilege#setDenyRestrictions(java.util.Set)}.
      */
     @Test
-    public void testSetDenyRestrictions() {
+    void testSetDenyRestrictions() {
         LocalPrivilege lp1 = new LocalPrivilege(PrivilegeConstants.JCR_READ);
         assertTrue(lp1.getDenyRestrictions().isEmpty());
 
@@ -245,7 +246,7 @@ public class LocalPrivilegeTest {
      * Test method for {@link org.apache.sling.jcr.contentloader.LocalPrivilege#toString()}.
      */
     @Test
-    public void testToString() {
+    void testToString() {
         LocalPrivilege lp1 = new LocalPrivilege(PrivilegeConstants.JCR_READ);
         assertNotNull(lp1.toString());
     }
@@ -254,10 +255,10 @@ public class LocalPrivilegeTest {
      * Test method for {@link org.apache.sling.jcr.contentloader.LocalPrivilege#equals(java.lang.Object)}.
      */
     @Test
-    public void testEqualsObject() {
+    void testEqualsObject() {
         LocalPrivilege lp1 = new LocalPrivilege(PrivilegeConstants.JCR_READ);
         assertEquals(lp1, lp1);
-        assertNotEquals(lp1, null);
+        assertNotNull(lp1);
         assertNotEquals(lp1, this);
 
         LocalPrivilege lp2 = new LocalPrivilege(PrivilegeConstants.JCR_WRITE);

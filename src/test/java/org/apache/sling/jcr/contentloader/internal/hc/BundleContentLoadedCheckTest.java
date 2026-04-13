@@ -36,21 +36,22 @@ import org.apache.sling.jcr.contentloader.internal.readers.XmlReader;
 import org.apache.sling.jcr.contentloader.internal.readers.ZipReader;
 import org.apache.sling.testing.mock.osgi.MockBundle;
 import org.apache.sling.testing.mock.sling.ResourceResolverType;
-import org.apache.sling.testing.mock.sling.junit.SlingContext;
+import org.apache.sling.testing.mock.sling.junit5.SlingContext;
+import org.apache.sling.testing.mock.sling.junit5.SlingContextExtension;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class BundleContentLoadedCheckTest {
+@ExtendWith(SlingContextExtension.class)
+class BundleContentLoadedCheckTest {
 
-    @Rule
     public final SlingContext context = new SlingContext(ResourceResolverType.JCR_OAK);
 
     private MockBundle bundle;
@@ -58,8 +59,8 @@ public class BundleContentLoadedCheckTest {
     private BundleContentLoader contentLoader;
     private BundleContentLoadedCheck check;
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         bundle = BundleContentLoaderTest.newBundleWithInitialContent(context, "SLING-INF/libs/app;path:=/libs/app");
 
         // prepare content readers
@@ -126,13 +127,13 @@ public class BundleContentLoadedCheckTest {
     }
 
     @Test
-    public void testNotInstalled() {
+    void testNotInstalled() {
         Result result = check.execute();
         assertFalse(result.isOk());
     }
 
     @Test
-    public void testInstalled() {
+    void testInstalled() {
         contentLoader.registerBundle(context.resourceResolver().adaptTo(Session.class), bundle, false);
         Result result = check.execute();
         assertTrue(result.isOk());

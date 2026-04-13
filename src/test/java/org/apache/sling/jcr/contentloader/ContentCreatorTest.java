@@ -23,26 +23,30 @@ import javax.jcr.RepositoryException;
 import java.io.InputStream;
 import java.util.Map;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests to verify the ContentCreator default methods
  * for an old impl that does not provide an implementation
  * for those methods
  */
-public class ContentCreatorTest {
+class ContentCreatorTest {
 
     private ContentCreator contentCreator = new ContentCreatorOldImpl();
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void testCreateAce1() throws RepositoryException {
-        contentCreator.createAce(null, null, null);
+    @Test
+    void testCreateAce1() {
+        assertThrows(UnsupportedOperationException.class, () -> contentCreator.createAce(null, null, null));
     }
 
     @Deprecated
-    @Test(expected = UnsupportedOperationException.class)
-    public void testCreateAce2() throws RepositoryException {
-        contentCreator.createAce(null, null, null, null, null, null, null);
+    @Test
+    void testCreateAce2() {
+        assertThrows(
+                UnsupportedOperationException.class,
+                () -> contentCreator.createAce(null, null, null, null, null, null, null));
     }
 
     /**

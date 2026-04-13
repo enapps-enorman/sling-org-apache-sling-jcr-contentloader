@@ -26,25 +26,25 @@ import java.util.Map;
 
 import org.apache.sling.commons.osgi.ManifestHeader;
 import org.jmock.Expectations;
-import org.jmock.integration.junit4.JUnitRuleMockery;
-import org.junit.Rule;
-import org.junit.Test;
+import org.jmock.junit5.JUnit5Mockery;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.osgi.framework.Bundle;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class PathEntryTest {
+class PathEntryTest {
     final String pathEntryPath = "/test/path";
 
-    @Rule
-    public final JUnitRuleMockery mockery = new JUnitRuleMockery();
+    @RegisterExtension
+    public final JUnit5Mockery mockery = new JUnit5Mockery();
 
     @Test
-    public void testGetContentPaths() {
+    void testGetContentPaths() {
         final Bundle bundle = mockery.mock(Bundle.class);
         final Dictionary<String, String> dict = new Hashtable<>();
         dict.put("Bnd-LastModified", "1258555936230");
@@ -80,7 +80,7 @@ public class PathEntryTest {
     }
 
     @Test
-    public void testConstructorSetup() throws NoSuchFieldException {
+    void testConstructorSetup() {
         final String overwriteDirective = "true";
         final String overwritePropertiesDirective = "true";
         final String uninstallDirective = "true";

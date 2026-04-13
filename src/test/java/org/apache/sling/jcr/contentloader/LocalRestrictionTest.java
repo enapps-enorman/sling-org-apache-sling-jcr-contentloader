@@ -25,16 +25,16 @@ import javax.jcr.ValueFormatException;
 
 import org.apache.jackrabbit.oak.spi.security.authorization.accesscontrol.AccessControlConstants;
 import org.apache.jackrabbit.value.ValueFactoryImpl;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  *
@@ -65,7 +65,7 @@ public class LocalRestrictionTest {
      * Test method for {@link org.apache.sling.jcr.contentloader.LocalRestriction#hashCode()}.
      */
     @Test
-    public void testHashCode() throws ValueFormatException {
+    void testHashCode() throws ValueFormatException {
         LocalRestriction lr1 = new LocalRestriction(AccessControlConstants.REP_GLOB, val("/hello1"));
         LocalRestriction lr2 = new LocalRestriction(AccessControlConstants.REP_GLOB, val("/hello2"));
         assertNotSame(lr1.hashCode(), lr2.hashCode());
@@ -86,7 +86,7 @@ public class LocalRestrictionTest {
      * Test method for {@link org.apache.sling.jcr.contentloader.LocalRestriction#getName()}.
      */
     @Test
-    public void testGetName() throws ValueFormatException {
+    void testGetName() throws ValueFormatException {
         LocalRestriction lr1 = new LocalRestriction(AccessControlConstants.REP_GLOB, val("/hello1"));
         assertEquals(AccessControlConstants.REP_GLOB, lr1.getName());
     }
@@ -95,7 +95,7 @@ public class LocalRestrictionTest {
      * Test method for {@link org.apache.sling.jcr.contentloader.LocalRestriction#isMultiValue()}.
      */
     @Test
-    public void testIsMultiValue() throws ValueFormatException {
+    void testIsMultiValue() throws ValueFormatException {
         LocalRestriction lr1 = new LocalRestriction(AccessControlConstants.REP_GLOB, val("/hello1"));
         assertFalse(lr1.isMultiValue());
 
@@ -107,7 +107,7 @@ public class LocalRestrictionTest {
      * Test method for {@link org.apache.sling.jcr.contentloader.LocalRestriction#getValue()}.
      */
     @Test
-    public void testGetValue() throws ValueFormatException {
+    void testGetValue() throws ValueFormatException {
         LocalRestriction lr1 = new LocalRestriction(AccessControlConstants.REP_GLOB, val("/hello1"));
         assertEquals(val("/hello1"), lr1.getValue());
 
@@ -125,7 +125,7 @@ public class LocalRestrictionTest {
      * Test method for {@link org.apache.sling.jcr.contentloader.LocalRestriction#getValues()}.
      */
     @Test
-    public void testGetValues() throws ValueFormatException {
+    void testGetValues() throws ValueFormatException {
         LocalRestriction lr1 = new LocalRestriction(AccessControlConstants.REP_ITEM_NAMES, vals("item1", "item2"));
         assertArrayEquals(vals("item1", "item2"), lr1.getValues());
 
@@ -140,7 +140,7 @@ public class LocalRestrictionTest {
      * Test method for {@link org.apache.sling.jcr.contentloader.LocalRestriction#toString()}.
      */
     @Test
-    public void testToString() throws ValueFormatException {
+    void testToString() throws ValueFormatException {
         LocalRestriction lr1 = new LocalRestriction(AccessControlConstants.REP_GLOB, val("/hello1"));
         assertNotNull(lr1.toString());
 
@@ -152,10 +152,10 @@ public class LocalRestrictionTest {
      * Test method for {@link org.apache.sling.jcr.contentloader.LocalRestriction#equals(java.lang.Object)}.
      */
     @Test
-    public void testEqualsObject() throws ValueFormatException {
+    void testEqualsObject() throws ValueFormatException {
         LocalRestriction lr1 = new LocalRestriction(AccessControlConstants.REP_GLOB, val("/hello1"));
         assertEquals(lr1, lr1);
-        assertNotEquals(lr1, null);
+        assertNotNull(lr1);
         assertNotEquals(lr1, this);
 
         LocalRestriction lr2 = new LocalRestriction(AccessControlConstants.REP_GLOB, val("/hello2"));

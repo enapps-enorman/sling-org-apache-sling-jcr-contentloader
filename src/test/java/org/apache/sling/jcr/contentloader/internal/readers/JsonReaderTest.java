@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.sling.jcr.contentloader.internal;
+package org.apache.sling.jcr.contentloader.internal.readers;
 
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
@@ -35,18 +35,20 @@ import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonWriter;
 import org.apache.sling.jcr.contentloader.ContentCreator;
 import org.apache.sling.jcr.contentloader.LocalPrivilege;
-import org.apache.sling.jcr.contentloader.internal.readers.JsonReader;
 import org.jmock.Expectations;
 import org.jmock.Sequence;
-import org.jmock.integration.junit4.JUnitRuleMockery;
-import org.junit.Rule;
+import org.jmock.junit5.JUnit5Mockery;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-public class JsonReaderTest {
+class JsonReaderTest {
 
     protected JsonReader jsonReader;
 
-    @Rule
-    public final JUnitRuleMockery mockery = new JUnitRuleMockery();
+    @RegisterExtension
+    public final JUnit5Mockery mockery = new JUnit5Mockery();
 
     protected ContentCreator creator;
 
@@ -56,20 +58,20 @@ public class JsonReaderTest {
         this.jsonReader = new JsonReader();
     }
 
-    @org.junit.Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() {
         setReader();
         this.creator = this.mockery.mock(ContentCreator.class);
         this.mySequence = this.mockery.sequence("my-sequence");
     }
 
-    @org.junit.After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() {
         this.jsonReader = null;
     }
 
-    @org.junit.Test
-    public void testEmptyObject() throws Exception {
+    @Test
+    void testEmptyObject() throws Exception {
         this.mockery.checking(new Expectations() {
             {
                 allowing(creator).createNode(null, null, null);
@@ -83,8 +85,8 @@ public class JsonReaderTest {
         this.parse("");
     }
 
-    @org.junit.Test
-    public void testEmpty() throws IOException, RepositoryException {
+    @Test
+    void testEmpty() throws IOException, RepositoryException {
         this.mockery.checking(new Expectations() {
             {
                 allowing(creator).createNode(null, null, null);
@@ -98,8 +100,8 @@ public class JsonReaderTest {
         this.parse("{}");
     }
 
-    @org.junit.Test
-    public void testDefaultPrimaryNodeTypeWithSurroundWhitespace() throws Exception {
+    @Test
+    void testDefaultPrimaryNodeTypeWithSurroundWhitespace() throws Exception {
         this.mockery.checking(new Expectations() {
             {
                 allowing(creator).createNode(null, null, null);
@@ -114,8 +116,8 @@ public class JsonReaderTest {
         this.parse(json);
     }
 
-    @org.junit.Test
-    public void testDefaultPrimaryNodeTypeWithoutEnclosingBracesWithSurroundWhitespace() throws Exception {
+    @Test
+    void testDefaultPrimaryNodeTypeWithoutEnclosingBracesWithSurroundWhitespace() throws Exception {
         this.mockery.checking(new Expectations() {
             {
                 allowing(creator).createNode(null, null, null);
@@ -130,8 +132,8 @@ public class JsonReaderTest {
         this.parse(json);
     }
 
-    @org.junit.Test
-    public void testExplicitePrimaryNodeType() throws Exception {
+    @Test
+    void testExplicitePrimaryNodeType() throws Exception {
         final String type = "xyz:testType";
         String json = "{ \"jcr:primaryType\": \"" + type + "\" }";
 
@@ -148,8 +150,8 @@ public class JsonReaderTest {
         this.parse(json);
     }
 
-    @org.junit.Test
-    public void testMixinNodeTypes1() throws Exception {
+    @Test
+    void testMixinNodeTypes1() throws Exception {
         final String[] mixins = new String[] {"xyz:mix1"};
         String json = "{ \"jcr:mixinTypes\": " + this.toJsonArray(mixins) + "}";
 
@@ -166,8 +168,8 @@ public class JsonReaderTest {
         this.parse(json);
     }
 
-    @org.junit.Test
-    public void testMixinNodeTypes2() throws Exception {
+    @Test
+    void testMixinNodeTypes2() throws Exception {
         final String[] mixins = new String[] {"xyz:mix1", "abc:mix2"};
         String json = "{ \"jcr:mixinTypes\": " + this.toJsonArray(mixins) + "}";
 
@@ -184,8 +186,8 @@ public class JsonReaderTest {
         this.parse(json);
     }
 
-    @org.junit.Test
-    public void testPropertiesEmpty() throws Exception {
+    @Test
+    void testPropertiesEmpty() throws Exception {
         String json = "{ \"property\": \"\"}";
 
         this.mockery.checking(new Expectations() {
@@ -203,8 +205,8 @@ public class JsonReaderTest {
         this.parse(json);
     }
 
-    @org.junit.Test
-    public void testPropertiesSingleValue() throws Exception {
+    @Test
+    void testPropertiesSingleValue() throws Exception {
         String json = "{ \"p1\": \"v1\"}";
 
         this.mockery.checking(new Expectations() {
@@ -223,8 +225,8 @@ public class JsonReaderTest {
         this.parse(json);
     }
 
-    @org.junit.Test
-    public void testPropertiesSingleDateValue() throws Exception {
+    @Test
+    void testPropertiesSingleDateValue() throws Exception {
         String json = "{ \"p1\": \"2009-09-24T16:32:57.948-07:00\"}";
 
         this.mockery.checking(new Expectations() {
@@ -243,8 +245,8 @@ public class JsonReaderTest {
         this.parse(json);
     }
 
-    @org.junit.Test
-    public void testPropertiesTwoSingleValue() throws Exception {
+    @Test
+    void testPropertiesTwoSingleValue() throws Exception {
         String json = "{ \"p1\": \"v1\", \"p2\": \"v2\"}";
 
         this.mockery.checking(new Expectations() {
@@ -264,8 +266,8 @@ public class JsonReaderTest {
         this.parse(json);
     }
 
-    @org.junit.Test
-    public void testPropertiesMultiValue() throws Exception {
+    @Test
+    void testPropertiesMultiValue() throws Exception {
         String json = "{ \"p1\": [\"v1\"]}";
 
         this.mockery.checking(new Expectations() {
@@ -283,8 +285,8 @@ public class JsonReaderTest {
         this.parse(json);
     }
 
-    @org.junit.Test
-    public void testPropertiesMultiDateValue() throws Exception {
+    @Test
+    void testPropertiesMultiDateValue() throws Exception {
         String json = "{ \"p1\": [\"2009-09-24T16:32:57.948-07:00\"]}";
 
         this.mockery.checking(new Expectations() {
@@ -303,8 +305,8 @@ public class JsonReaderTest {
         this.parse(json);
     }
 
-    @org.junit.Test
-    public void testPropertiesMultiValueEmpty() throws Exception {
+    @Test
+    void testPropertiesMultiValueEmpty() throws Exception {
         String json = "{ \"p1\": []}";
 
         this.mockery.checking(new Expectations() {
@@ -322,8 +324,8 @@ public class JsonReaderTest {
         this.parse(json);
     }
 
-    @org.junit.Test
-    public void testChild() throws Exception {
+    @Test
+    void testChild() throws Exception {
         String json = "{ " + " \"c1\" : {}" + "}";
         this.mockery.checking(new Expectations() {
             {
@@ -342,8 +344,8 @@ public class JsonReaderTest {
         this.parse(json);
     }
 
-    @org.junit.Test
-    public void testChildWithMixin() throws Exception {
+    @Test
+    void testChildWithMixin() throws Exception {
         String json = "{ " + " \"c1\" : {" + "\"jcr:mixinTypes\" : [\"xyz:TestType\"]" + "}" + "}";
         this.mockery.checking(new Expectations() {
             {
@@ -362,8 +364,8 @@ public class JsonReaderTest {
         this.parse(json);
     }
 
-    @org.junit.Test
-    public void testTwoChildren() throws Exception {
+    @Test
+    void testTwoChildren() throws Exception {
         String json = "{ " + " \"c1\" : {}," + " \"c2\" : {}" + "}";
         this.mockery.checking(new Expectations() {
             {
@@ -386,8 +388,8 @@ public class JsonReaderTest {
         this.parse(json);
     }
 
-    @org.junit.Test
-    public void testChildWithProperty() throws Exception {
+    @Test
+    void testChildWithProperty() throws Exception {
         String json = "{ " + " \"c1\" : {" + "      \"c1p1\" : \"v1\"" + "}" + "}";
         this.mockery.checking(new Expectations() {
             {
@@ -407,8 +409,8 @@ public class JsonReaderTest {
         this.parse(json);
     }
 
-    @org.junit.Test
-    public void testCreateOnePrincipal() throws Exception {
+    @Test
+    void testCreateOnePrincipal() throws Exception {
         String json = "{\"security:principals\":{ " + "    \"name\" : \"username2\"," + "    \"password\" : \"pwd2\""
                 + "  }}";
         final LinkedHashMap<String, Object> map = new LinkedHashMap<String, Object>();
@@ -426,8 +428,8 @@ public class JsonReaderTest {
         this.parse(json);
     }
 
-    @org.junit.Test
-    public void testCreatePrincipals() throws Exception {
+    @Test
+    void testCreatePrincipals() throws Exception {
         String json = "{\"security:principals\":[ " + "  { " + "    \"name\" : \"username1\","
                 + "    \"password\" : \"pwd1\"," + "    \"foo\" : \"bar\"" + "  }," + "  { "
                 + "    \"name\" : \"username2\"," + "    \"password\" : \"pwd2\"" + "  }," + "  { "
@@ -466,8 +468,8 @@ public class JsonReaderTest {
         return list;
     }
 
-    @org.junit.Test
-    public void testCreateAcl() throws Exception {
+    @Test
+    void testCreateAcl() throws Exception {
         String json = " { " + "\"security:acl\" : [ " + "  { " + "    \"principal\" : \"username1\","
                 + "    \"granted\" : [\"jcr:read\",\"jcr:write\"]," + "    \"denied\" : []" + "  }," + "  {"
                 + "    \"principal\" : \"groupname1\"," + "    \"granted\" : [\"jcr:read\",\"jcr:write\"]" + "  },"
@@ -502,8 +504,8 @@ public class JsonReaderTest {
         this.parse(json);
     }
 
-    @org.junit.Test
-    public void testCreateAclWithTickQuotes() throws Exception {
+    @Test
+    void testCreateAclWithTickQuotes() throws Exception {
         String json = " { " + "'security:acl' : [ " + "  { " + "    'principal' : 'username1',"
                 + "    'granted' : ['jcr:read','jcr:write']," + "    'denied' : []" + "  }," + "  {"
                 + "    'principal' : 'groupname1'," + "    'granted' : ['jcr:read','jcr:write']" + "  }," + "  {"

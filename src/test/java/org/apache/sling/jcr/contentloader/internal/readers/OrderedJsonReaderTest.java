@@ -18,23 +18,23 @@
  */
 package org.apache.sling.jcr.contentloader.internal.readers;
 
-import org.apache.sling.jcr.contentloader.internal.JsonReaderTest;
 import org.jmock.Expectations;
+import org.junit.jupiter.api.Test;
 
 /**
  * testing specific ordered json import case:
  * - should work with all normal json cases,
  * - should work for specific ordered case
  */
-public class OrderedJsonReaderTest extends JsonReaderTest {
+class OrderedJsonReaderTest extends JsonReaderTest {
 
     @Override
     protected void setReader() {
         this.jsonReader = new OrderedJsonReader();
     }
 
-    @org.junit.Test
-    public void testTwoOrderedChildren() throws Exception {
+    @Test
+    void testTwoOrderedChildren() throws Exception {
         String json = "{ " + " \"SLING:ordered\" : ["
                 + "{ \"SLING:name\": \"c1\"},"
                 + "{ \"SLING:name\": \"c2\"}"
